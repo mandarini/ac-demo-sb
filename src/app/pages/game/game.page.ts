@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, effect, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameStore } from '../../state/game.store';
@@ -16,6 +16,7 @@ import { GameStore } from '../../state/game.store';
             class="cookie"
             [style.left]="cookie.style.left"
             [style.animation-duration]="cookie.style.animationDuration"
+            [style.animation-delay]="cookie.style.animationDelay"
             (click)="claimCookie(cookie.id)"
           >
             {{ cookie.emoji }}
@@ -72,10 +73,11 @@ import { GameStore } from '../../state/game.store';
     .cookie {
       position: absolute;
       font-size: 40px;
-      animation: fall linear;
+      animation: fall linear forwards;
       cursor: pointer;
       pointer-events: auto;
       user-select: none;
+      top: -100px; /* Start above viewport */
     }
     
     .cookie:hover {
@@ -97,25 +99,52 @@ export class GamePage implements OnInit, OnDestroy {
   animatedCookies: Array<{
     id: string;
     emoji: string;
-    style: { left: string; animationDuration: string };
+    style: { left: string; animationDuration: string; animationDelay: string };
   }> = [];
+
+  private processedCookieIds = new Set<string>();
 
   constructor(
     public gameStore: GameStore,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
-    // When active cookies change, re-render the simple animated list
+    // When active cookies change, add new ones without disrupting existing animations
     effect(() => {
       const active = this.gameStore.activeCookies();
-      // Map to simple objects for rendering
-      this.animatedCookies = active.map(c => ({
-        id: c.id,
-        emoji: c.type === 'cat' ? '🐱' : '🍪',
-        style: {
-          left: Math.random() * 100 + '%',
-          animationDuration: (Math.random() * 2 + 2).toFixed(2) + 's'
+      
+      // Find new cookies that haven't been processed yet
+      const newCookies = active.filter(c => !this.processedCookieIds.has(c.id));
+      
+      // Add new cookies to the animated list
+      if (newCookies.length > 0) {
+        newCookies.forEach(c => {
+          this.processedCookieIds.add(c.id);
+          this.animatedCookies.push({
+            id: c.id,
+            emoji: c.type === 'cat' ? '🐱' : '🍪',
+            style: {
+              left: Math.random() * 80 + 10 + '%', // Keep cookies away from edges
+              animationDuration: (Math.random() * 4 + 4).toFixed(2) + 's', // Slower: 4-8 seconds
+              animationDelay: '0.1s' // Small delay to ensure DOM is ready
+            }
+          });
+        });
+        
+        // Force change detection to ensure DOM updates
+        this.cdr.markForCheck();
+      }
+
+      // Remove cookies that are no longer active
+      const activeCookieIds = new Set(active.map(c => c.id));
+      this.animatedCookies = this.animatedCookies.filter(c => activeCookieIds.has(c.id));
+      
+      // Clean up processed IDs for cookies that are no longer active
+      this.processedCookieIds.forEach(id => {
+        if (!activeCookieIds.has(id)) {
+          this.processedCookieIds.delete(id);
         }
-      }));
+      });
     });
   }
 
@@ -128,6 +157,7 @@ export class GamePage implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.gameStore.destroy();
     this.animatedCookies = [];
+    this.processedCookieIds.clear();
   }
 
   async claimCookie(cookieId: string) {
