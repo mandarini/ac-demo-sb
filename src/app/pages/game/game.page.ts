@@ -161,9 +161,9 @@ export class GamePage implements OnInit, OnDestroy {
   }
 
   async claimCookie(cookieId: string) {
-    await this.gameStore.claimCookie(cookieId);
-    // Remove immediately from UI
+    // Remove immediately from UI - do not wait for server response
     this.animatedCookies = this.animatedCookies.filter(c => c.id !== cookieId);
+    await this.gameStore.claimCookie(cookieId);
   }
 
   goBack() {

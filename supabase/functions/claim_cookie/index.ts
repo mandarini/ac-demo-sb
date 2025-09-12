@@ -39,10 +39,10 @@ serve(async (req) => {
       )
     }
 
-    // Check rate limiting
+    // Check rate limiting and get current scores
     const { data: currentScores } = await supabaseClient
       .from('scores')
-      .select('last_claim_at')
+      .select('last_claim_at, score_total, score_round')
       .eq('player_id', player.id)
       .single()
 
