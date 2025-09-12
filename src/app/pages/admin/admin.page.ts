@@ -42,34 +42,29 @@ import { SupabaseService } from '../../core/supabase.service';
             <!-- Game Controls -->
             <div class="bg-white/10 backdrop-blur rounded-lg p-6">
               <h2 class="text-xl font-bold text-white mb-4">Game Controls</h2>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="flex gap-4 justify-center">
                 <button
                   (click)="adminAction('start_round')"
-                  class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                  class="px-8 py-4 bg-green-500 text-white text-lg font-bold rounded-lg hover:bg-green-600 min-w-[150px]"
                   [disabled]="loading()"
                 >
-                  Start Round
+                  🎮 START GAME
                 </button>
                 <button
                   (click)="adminAction('stop_round')"
-                  class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  class="px-8 py-4 bg-red-500 text-white text-lg font-bold rounded-lg hover:bg-red-600 min-w-[150px]"
                   [disabled]="loading()"
                 >
-                  Stop Round
+                  🛑 STOP GAME
                 </button>
-                <button
-                  (click)="adminAction('start_intermission')"
-                  class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-                  [disabled]="loading()"
-                >
-                  Intermission
-                </button>
+              </div>
+              <div class="flex gap-4 justify-center mt-4">
                 <button
                   (click)="adminAction('clear_cookies')"
-                  class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                  class="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
                   [disabled]="loading()"
                 >
-                  Clear Cookies
+                  Clear All Cookies
                 </button>
               </div>
             </div>

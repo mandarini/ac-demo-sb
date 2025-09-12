@@ -70,7 +70,6 @@ async function startRound(supabaseClient: any, roomId: string) {
 
   const newRoundNo = (room?.round_no || 0) + 1
   const startTime = new Date()
-  const endTime = new Date(startTime.getTime() + 30 * 1000) // 30 seconds
 
   const { error } = await supabaseClient
     .from('rooms')
@@ -78,7 +77,7 @@ async function startRound(supabaseClient: any, roomId: string) {
       status: 'running',
       round_no: newRoundNo,
       round_started_at: startTime.toISOString(),
-      round_ends_at: endTime.toISOString()
+      round_ends_at: null // No automatic end time
     })
     .eq('id', roomId)
 
@@ -93,7 +92,7 @@ async function startRound(supabaseClient: any, roomId: string) {
   }
 
   return new Response(
-    JSON.stringify({ success: true, round: newRoundNo }),
+    JSON.stringify({ success: true, message: 'Game started!', round: newRoundNo }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
@@ -103,14 +102,21 @@ async function stopRound(supabaseClient: any, roomId: string) {
     .from('rooms')
     .update({
       status: 'idle',
-      round_ends_at: null
+      round_ends_at: new Date().toISOString() // Mark when game was stopped
     })
     .eq('id', roomId)
 
   if (error) throw error
 
+  // Clear all active cookies when game stops
+  await supabaseClient
+    .from('cookies')
+    .delete()
+    .eq('room_id', roomId)
+    .is('owner', null)
+
   return new Response(
-    JSON.stringify({ success: true }),
+    JSON.stringify({ success: true, message: 'Game stopped!' }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }

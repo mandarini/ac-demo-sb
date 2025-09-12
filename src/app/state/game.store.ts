@@ -60,9 +60,8 @@ export class GameStore {
   scores = signal<Score[]>([]);
   
   // Game state
-  timeRemaining = signal<number>(0);
   isGameActive = computed(() => this.room()?.status === 'running');
-  isIntermission = computed(() => this.room()?.status === 'intermission');
+  isGameOver = computed(() => this.room()?.status === 'idle');
   
   // Leaderboards
   roundLeaderboard = computed(() => {
@@ -143,7 +142,6 @@ export class GameStore {
   });
 
   private subscriptions: any[] = [];
-  private gameTimer: any = null;
   private spawnTimer: any = null;
 
   constructor(
@@ -151,8 +149,6 @@ export class GameStore {
     private deviceService: DeviceService,
     public presence: PresenceService
   ) {
-    // Start timer for countdown
-    this.startGameTimer();
     // Start cookie spawning timer
     this.startSpawnTimer();
   }
@@ -299,20 +295,6 @@ export class GameStore {
     }
   }
 
-  // Timer for countdown
-  private startGameTimer(): void {
-    this.gameTimer = setInterval(() => {
-      const room = this.room();
-      if (room?.round_ends_at) {
-        const now = new Date().getTime();
-        const endTime = new Date(room.round_ends_at).getTime();
-        const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
-        this.timeRemaining.set(remaining);
-      } else {
-        this.timeRemaining.set(0);
-      }
-    }, 1000);
-  }
 
   // Timer for spawning cookies
   private startSpawnTimer(): void {
@@ -362,11 +344,6 @@ export class GameStore {
   destroy(): void {
     this.cleanupSubscriptions();
     this.presence.leavePresence();
-    
-    if (this.gameTimer) {
-      clearInterval(this.gameTimer);
-      this.gameTimer = null;
-    }
     
     if (this.spawnTimer) {
       clearInterval(this.spawnTimer);

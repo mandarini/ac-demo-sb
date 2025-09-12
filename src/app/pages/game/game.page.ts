@@ -33,11 +33,11 @@ import { GameStore } from '../../state/game.store';
 
         <div class="bg-black/50 backdrop-blur rounded-lg px-4 py-2 text-center">
           @if (gameStore.isGameActive()) {
-            <p class="text-white text-2xl font-bold">{{ gameStore.timeRemaining() }}s</p>
-            <p class="text-gray-300 text-sm">Round {{ gameStore.room()?.round_no }}</p>
-          } @else if (gameStore.isIntermission()) {
-            <p class="text-yellow-400 font-bold">Intermission</p>
-            <p class="text-white">{{ gameStore.timeRemaining() }}s</p>
+            <p class="text-green-400 text-xl font-bold">🎮 GAME STARTED</p>
+            <p class="text-gray-300 text-sm">Catch the cookies!</p>
+          } @else if (gameStore.isGameOver()) {
+            <p class="text-red-400 text-xl font-bold">🏁 GAME OVER</p>
+            <p class="text-gray-300 text-sm">Check the leaderboard!</p>
           } @else {
             <p class="text-gray-400">Waiting to start...</p>
           }
