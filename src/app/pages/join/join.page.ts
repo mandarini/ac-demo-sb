@@ -62,6 +62,16 @@ import { GameStore } from '../../state/game.store';
           <p class="mt-1">🏆 Compete for the top spot</p>
         </div>
 
+        <!-- Leaderboard Link -->
+        <div class="mt-6 text-center">
+          <button
+            (click)="goToLeaderboard()"
+            class="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-3 px-6 rounded-xl hover:from-yellow-600 hover:to-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+          >
+            🏆 View Leaderboard
+          </button>
+        </div>
+
         <!-- Social Links -->
         <div class="mt-8 flex flex-wrap justify-center items-center gap-4 text-sm">
           <a 
@@ -186,5 +196,9 @@ export class JoinPage implements OnInit {
 
   retry() {
     this.assignNickname();
+  }
+
+  goToLeaderboard() {
+    this.router.navigate(['/leaderboard']);
   }
 }

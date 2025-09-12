@@ -250,7 +250,7 @@ export class GameStore {
   }
 
   // Load initial game data
-  private async loadInitialData(): Promise<void> {
+  async loadInitialData(): Promise<void> {
     try {
       // Load room data
       const roomData = await this.supabase.getRoomData(this.roomId);
