@@ -84,7 +84,11 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
   @HostListener('document:touchstart', ['$event'])
   onTouchStart(event: TouchEvent) {
     if (this.cursorService.isActive() && this.cursorService.isMobileDevice()) {
-      event.preventDefault(); // Prevent default touch behavior
+      // Only prevent default if NOT touching an interactive element
+      if (!this.isInteractiveElement(event.target as Element)) {
+        event.preventDefault();
+      }
+      
       const touch = event.touches[0];
       if (touch) {
         const position = this.cursorService.getRelativeTouchPosition(touch);
@@ -96,8 +100,11 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
   @HostListener('document:touchmove', ['$event'])
   onTouchMove(event: TouchEvent) {
     if (this.cursorService.isActive() && this.cursorService.isMobileDevice()) {
-      // Prevent scrolling during touch move for better ripple experience
-      event.preventDefault();
+      // Only prevent scrolling if NOT on an interactive element
+      if (!this.isInteractiveElement(event.target as Element)) {
+        event.preventDefault();
+      }
+      
       const touch = event.touches[0];
       if (touch) {
         const position = this.cursorService.getRelativeTouchPosition(touch);
@@ -109,12 +116,60 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
   @HostListener('document:touchend', ['$event'])
   onTouchEnd(event: TouchEvent) {
     if (this.cursorService.isActive() && this.cursorService.isMobileDevice()) {
-      event.preventDefault();
+      // Only prevent default if NOT touching an interactive element
+      if (!this.isInteractiveElement(event.target as Element)) {
+        event.preventDefault();
+      }
+      
       const touch = event.changedTouches[0];
       if (touch) {
         const position = this.cursorService.getRelativeTouchPosition(touch);
         this.cursorService.sendTouchRipple(position.x, position.y, 'release');
       }
     }
+  }
+
+  /**
+   * Check if the touched element is interactive (clickable)
+   */
+  private isInteractiveElement(element: Element | null): boolean {
+    if (!element) return false;
+    
+    // Check for common interactive elements and classes
+    const interactiveSelectors = [
+      'button',
+      'a',
+      'input',
+      'textarea',
+      'select',
+      '[role="button"]',
+      '[tabindex]',
+      '.cookie',           // Game cookies
+      '[onclick]',         // Elements with click handlers
+      '[ng-click]',        // Angular click handlers
+      '[data-clickable]'   // Custom clickable marker
+    ];
+    
+    // Check if the element itself matches
+    for (const selector of interactiveSelectors) {
+      if (element.matches && element.matches(selector)) {
+        return true;
+      }
+    }
+    
+    // Check if any parent element matches (bubbling up)
+    let parent = element.parentElement;
+    let depth = 0;
+    while (parent && depth < 5) { // Limit depth to avoid performance issues
+      for (const selector of interactiveSelectors) {
+        if (parent.matches && parent.matches(selector)) {
+          return true;
+        }
+      }
+      parent = parent.parentElement;
+      depth++;
+    }
+    
+    return false;
   }
 }
