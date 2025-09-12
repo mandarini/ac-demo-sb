@@ -169,6 +169,7 @@ async function spawnCookies(supabaseClient: any, roomId: string, count: number) 
       type: isCat ? 'cat' : 'cookie',
       value: isCat ? 3 : 1,
       x_pct: Math.random() * 90 + 5, // 5% to 95%
+      y_pct: -10, // Start above the viewport (will fall down)
       spawned_at: now.toISOString(),
       despawn_at: despawnTime.toISOString()
     })

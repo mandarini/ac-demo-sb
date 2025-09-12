@@ -29,8 +29,6 @@ import { JoinNotificationsContainerComponent } from '../../ui/join-notifications
             class="cookie"
             [style.left]="cookie.style.left"
             [style.top]="cookie.style.top"
-            [style.animation-duration]="cookie.style.animationDuration"
-            [style.animation-delay]="cookie.style.animationDelay"
             (click)="claimCookie(cookie.id)"
           >
             {{ cookie.emoji }}
@@ -87,7 +85,6 @@ import { JoinNotificationsContainerComponent } from '../../ui/join-notifications
     .cookie {
       position: absolute;
       font-size: 40px;
-      animation: fall linear forwards;
       cursor: pointer;
       pointer-events: auto;
       user-select: none;
@@ -97,14 +94,6 @@ import { JoinNotificationsContainerComponent } from '../../ui/join-notifications
       transform: scale(1.2);
     }
     
-    @keyframes fall {
-      from {
-        transform: translateY(0);
-      }
-      to {
-        transform: translateY(calc(100vh + 100px));
-      }
-    }
   `]
 })
 export class GamePage implements OnInit, OnDestroy {
@@ -112,10 +101,11 @@ export class GamePage implements OnInit, OnDestroy {
   animatedCookies: Array<{
     id: string;
     emoji: string;
-    style: { left: string; top: string; animationDuration: string; animationDelay: string };
+    style: { left: string; top: string };
   }> = [];
 
   private processedCookieIds = new Set<string>();
+  private positionUpdateTimer: any = null;
 
   constructor(
     public gameStore: GameStore,
@@ -134,19 +124,26 @@ export class GamePage implements OnInit, OnDestroy {
           newCookies.forEach(c => {
             this.processedCookieIds.add(c.id);
             
-            // Calculate animation duration based on despawn time
+            // Calculate real-time Y position based on elapsed time
             const spawnTime = new Date(c.spawned_at).getTime();
             const despawnTime = new Date(c.despawn_at).getTime();
-            const duration = (despawnTime - spawnTime) / 1000; // Convert to seconds
+            const now = Date.now();
+            const totalFallTime = (despawnTime - spawnTime) / 1000; // Total time to fall in seconds
+            const elapsedTime = (now - spawnTime) / 1000; // Time since spawn in seconds
+            
+            // Calculate current Y position (falling from -10% to 110%)
+            const startY = -10; // Start above viewport
+            const endY = 110; // End below viewport  
+            const totalDistance = endY - startY; // 120% total distance
+            const progress = Math.min(elapsedTime / totalFallTime, 1); // 0 to 1
+            const currentY = startY + (progress * totalDistance);
             
             this.animatedCookies.push({
               id: c.id,
               emoji: c.type === 'cat' ? '🐱' : '🍪',
               style: {
-                left: c.x_pct + '%', // Use database x position
-                top: c.y_pct + '%', // Use database y position  
-                animationDuration: duration.toFixed(2) + 's', // Use actual spawn-to-despawn duration
-                animationDelay: '0.1s' // Small delay to ensure DOM is ready
+                left: c.x_pct + '%', // Use database x position for sync
+                top: currentY + '%', // Real-time calculated Y position
               }
             });
           });
@@ -172,12 +169,20 @@ export class GamePage implements OnInit, OnDestroy {
     if (!this.gameStore.currentPlayer()) {
       this.router.navigate(['/']);
     }
+    
+    // Start position update timer for smooth cookie falling animation
+    this.startPositionUpdates();
   }
 
   ngOnDestroy() {
     this.gameStore.destroy();
     this.animatedCookies = [];
     this.processedCookieIds.clear();
+    
+    // Clean up position update timer
+    if (this.positionUpdateTimer) {
+      clearInterval(this.positionUpdateTimer);
+    }
   }
 
   async claimCookie(cookieId: string) {
@@ -188,5 +193,48 @@ export class GamePage implements OnInit, OnDestroy {
 
   goBack() {
     this.router.navigate(['/']);
+  }
+
+  private startPositionUpdates() {
+    // Update cookie positions every 16ms (~60fps) for smooth animation
+    this.positionUpdateTimer = setInterval(() => {
+      this.updateCookiePositions();
+    }, 16);
+  }
+
+  private updateCookiePositions() {
+    const now = Date.now();
+    let needsUpdate = false;
+
+    // Update positions for all animated cookies
+    this.animatedCookies.forEach(cookie => {
+      // Find the corresponding active cookie to get spawn/despawn times
+      const activeCookie = this.gameStore.activeCookies().find(c => c.id === cookie.id);
+      if (activeCookie) {
+        const spawnTime = new Date(activeCookie.spawned_at).getTime();
+        const despawnTime = new Date(activeCookie.despawn_at).getTime();
+        const totalFallTime = (despawnTime - spawnTime) / 1000;
+        const elapsedTime = (now - spawnTime) / 1000;
+        
+        // Calculate current Y position
+        const startY = -10;
+        const endY = 110;
+        const totalDistance = endY - startY;
+        const progress = Math.min(elapsedTime / totalFallTime, 1);
+        const currentY = startY + (progress * totalDistance);
+        
+        // Update position if it changed significantly (avoid unnecessary DOM updates)
+        const newTop = currentY + '%';
+        if (cookie.style.top !== newTop) {
+          cookie.style.top = newTop;
+          needsUpdate = true;
+        }
+      }
+    });
+
+    // Trigger change detection only if positions actually changed
+    if (needsUpdate) {
+      this.cdr.markForCheck();
+    }
   }
 }

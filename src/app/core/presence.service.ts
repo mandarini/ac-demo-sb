@@ -28,35 +28,40 @@ export class PresenceService {
   joinPresence(roomId: string, userState: PresenceState): void {
     this.leavePresence(); // Clean up any existing presence
 
+    console.log('🟢 Joining presence for room:', roomId, 'user:', userState.nick, 'device:', userState.device_id);
+
     this.channel = this.supabase.subscribeToPresence(roomId, {
       onJoin: (key, current, new_) => {
-        console.log('User joined:', new_);
+        console.log('🟢 User joined:', new_);
         this.updatePresenceState();
         
         // Add join notifications for each new user
         if (new_ && Array.isArray(new_)) {
           new_.forEach((presence: any) => {
-            if (presence && presence.nick && presence.color && presence.device_id) {
-              this.joinNotificationService.addJoinNotification(
-                presence.nick,
-                presence.color || '#3B82F6',
-                presence.device_id
-              );
+            if (presence && presence.nick && presence.device_id) {
+              // Don't show notification for ourselves
+              if (presence.device_id !== userState.device_id) {
+                this.joinNotificationService.addJoinNotification(
+                  presence.nick,
+                  presence.color || '#3B82F6',
+                  presence.device_id
+                );
+              }
             }
           });
         }
       },
       onLeave: (key, current, left) => {
-        console.log('User left:', left);
+        console.log('🔴 User left:', left);
         this.updatePresenceState();
       },
       onSync: () => {
-        console.log('Presence synced');
+        console.log('🔄 Presence synced');
         this.updatePresenceState();
       }
     });
 
-    // Track this user's presence
+    // Track this user's presence with unique key
     this.channel.track(userState);
   }
 
@@ -76,11 +81,15 @@ export class PresenceService {
     const presenceState = this.channel.presenceState();
     const users: PresenceState[] = [];
     
+    console.log('📊 Raw presence state:', presenceState);
+    
     Object.keys(presenceState).forEach(key => {
       // Each key contains an array of presence records
       if (presenceState[key] && presenceState[key].length > 0) {
         // Get the first record for each key (most recent)
         const presenceRecord = presenceState[key][0];
+        console.log('👤 Processing presence record:', presenceRecord);
+        
         // Check if the record has the expected structure
         if (presenceRecord && typeof presenceRecord === 'object' && 
             'nick' in presenceRecord && 'device_id' in presenceRecord && 
@@ -89,6 +98,9 @@ export class PresenceService {
         }
       }
     });
+
+    console.log('👥 Final users list:', users);
+    console.log('🔢 Online count:', users.length);
 
     this.onlineCount.set(users.length);
     this.onlineUsers.set(users.sort((a, b) => a.nick.localeCompare(b.nick)));

@@ -114,9 +114,7 @@ export class SupabaseService {
     onLeave?: (key: string, current: any, left: any) => void;
     onSync?: () => void;
   }): RealtimeChannel {
-    const channel = this.supabase.channel(`presence_${roomId}`, {
-      config: { presence: { key: roomId } }
-    });
+    const channel = this.supabase.channel(`presence_${roomId}`);
 
     // Set up presence event handlers
     if (callbacks.onSync) {

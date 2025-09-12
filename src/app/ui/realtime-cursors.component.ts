@@ -56,8 +56,10 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Generate userId if not provided
+    // Use the provided userId (device_id) or generate one as fallback
     const finalUserId = this.userId || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('🖱️ Initializing cursor sharing for user:', finalUserId, 'nick:', this.username);
 
     // Join cursor sharing
     this.cursorService.joinCursorSharing(this.roomName, {
