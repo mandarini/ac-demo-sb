@@ -24,6 +24,7 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
           <div 
             class="cookie"
             [style.left]="cookie.style.left"
+            [style.top]="cookie.style.top"
             [style.animation-duration]="cookie.style.animationDuration"
             [style.animation-delay]="cookie.style.animationDelay"
             (click)="claimCookie(cookie.id)"
@@ -86,7 +87,6 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
       cursor: pointer;
       pointer-events: auto;
       user-select: none;
-      top: -100px; /* Start above viewport */
     }
     
     .cookie:hover {
@@ -95,7 +95,7 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
     
     @keyframes fall {
       from {
-        transform: translateY(-100px);
+        transform: translateY(0);
       }
       to {
         transform: translateY(calc(100vh + 100px));
@@ -108,7 +108,7 @@ export class GamePage implements OnInit, OnDestroy {
   animatedCookies: Array<{
     id: string;
     emoji: string;
-    style: { left: string; animationDuration: string; animationDelay: string };
+    style: { left: string; top: string; animationDuration: string; animationDelay: string };
   }> = [];
 
   private processedCookieIds = new Set<string>();
@@ -125,20 +125,27 @@ export class GamePage implements OnInit, OnDestroy {
       // Find new cookies that haven't been processed yet
       const newCookies = active.filter(c => !this.processedCookieIds.has(c.id));
       
-      // Add new cookies to the animated list
-      if (newCookies.length > 0) {
-        newCookies.forEach(c => {
-          this.processedCookieIds.add(c.id);
-          this.animatedCookies.push({
-            id: c.id,
-            emoji: c.type === 'cat' ? '🐱' : '🍪',
-            style: {
-              left: Math.random() * 80 + 10 + '%', // Keep cookies away from edges
-              animationDuration: (Math.random() * 4 + 4).toFixed(2) + 's', // Slower: 4-8 seconds
-              animationDelay: '0.1s' // Small delay to ensure DOM is ready
-            }
+        // Add new cookies to the animated list
+        if (newCookies.length > 0) {
+          newCookies.forEach(c => {
+            this.processedCookieIds.add(c.id);
+            
+            // Calculate animation duration based on despawn time
+            const spawnTime = new Date(c.spawned_at).getTime();
+            const despawnTime = new Date(c.despawn_at).getTime();
+            const duration = (despawnTime - spawnTime) / 1000; // Convert to seconds
+            
+            this.animatedCookies.push({
+              id: c.id,
+              emoji: c.type === 'cat' ? '🐱' : '🍪',
+              style: {
+                left: c.x_pct + '%', // Use database x position
+                top: c.y_pct + '%', // Use database y position  
+                animationDuration: duration.toFixed(2) + 's', // Use actual spawn-to-despawn duration
+                animationDelay: '0.1s' // Small delay to ensure DOM is ready
+              }
+            });
           });
-        });
         
         // Force change detection to ensure DOM updates
         this.cdr.markForCheck();

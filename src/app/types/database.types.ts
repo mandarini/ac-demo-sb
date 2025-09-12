@@ -101,6 +101,7 @@ export interface Database {
           type: 'cookie' | 'cat';
           value: number;
           x_pct: number;
+          y_pct: number;
           spawned_at: string;
           despawn_at: string;
           owner: string | null;
@@ -112,6 +113,7 @@ export interface Database {
           type: 'cookie' | 'cat';
           value: number;
           x_pct: number;
+          y_pct: number;
           spawned_at?: string;
           despawn_at: string;
           owner?: string | null;
@@ -123,6 +125,7 @@ export interface Database {
           type?: 'cookie' | 'cat';
           value?: number;
           x_pct?: number;
+          y_pct?: number;
           spawned_at?: string;
           despawn_at?: string;
           owner?: string | null;

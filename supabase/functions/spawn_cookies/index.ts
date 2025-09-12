@@ -51,7 +51,8 @@ serve(async (req) => {
         room_id: roomId,
         type: isCat ? 'cat' : 'cookie',
         value: isCat ? 3 : 1,
-        x_pct: Math.random() * 90 + 5, // 5% to 95%
+        x_pct: Math.random() * 90 + 5, // 5% to 95% horizontal position
+        y_pct: -10, // Start above the viewport (will fall down)
         spawned_at: now.toISOString(),
         despawn_at: despawnTime.toISOString()
       })
