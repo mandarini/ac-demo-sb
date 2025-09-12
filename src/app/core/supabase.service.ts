@@ -38,6 +38,15 @@ export class SupabaseService {
     return data;
   }
 
+  // Admin authentication
+  async authenticateAdmin(password: string): Promise<{ authenticated: boolean; error?: string }> {
+    const { data, error } = await this.supabase.functions.invoke('admin-auth', {
+      body: { password }
+    });
+    if (error) throw error;
+    return data;
+  }
+
   // Admin functions
   async adminAction(action: string, params: any = {}) {
     const { data, error } = await this.supabase.functions.invoke('admin_actions', {

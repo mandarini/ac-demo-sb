@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../core/supabase.service';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin',
@@ -27,9 +26,10 @@ import { environment } from '../../../environments/environment';
               />
               <button
                 (click)="authenticate()"
-                class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                [disabled]="loading()"
               >
-                Login
+                {{ loading() ? 'Authenticating...' : 'Login' }}
               </button>
             </div>
             @if (error()) {
@@ -170,15 +170,32 @@ export class AdminPage implements OnInit {
     }
   }
 
-  authenticate() {
-    if (this.passcode === environment.adminPasscode) {
-      this.authenticated.set(true);
-      sessionStorage.setItem('admin_authenticated', 'true');
-      this.error.set(null);
-    } else {
-      this.error.set('Invalid passcode');
+  async authenticate() {
+    if (!this.passcode.trim()) {
+      this.error.set('Please enter a password');
+      return;
     }
-    this.passcode = '';
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    try {
+      const result = await this.supabase.authenticateAdmin(this.passcode);
+      
+      if (result.authenticated) {
+        this.authenticated.set(true);
+        sessionStorage.setItem('admin_authenticated', 'true');
+        this.error.set(null);
+      } else {
+        this.error.set(result.error || 'Authentication failed');
+      }
+    } catch (err) {
+      console.error('Authentication error:', err);
+      this.error.set('Authentication failed. Please try again.');
+    } finally {
+      this.loading.set(false);
+      this.passcode = '';
+    }
   }
 
   async adminAction(action: string, params: any = {}) {
