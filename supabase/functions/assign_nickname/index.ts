@@ -113,20 +113,28 @@ serve(async (req) => {
       playerId = newPlayer.id
     }
 
-    // Initialize or update score record
-    const { error: scoreError } = await supabaseClient
+    // Initialize score record only for new players
+    // Check if scores already exist for this player
+    const { data: existingScores } = await supabaseClient
       .from('scores')
-      .upsert({
-        player_id: playerId,
-        room_id: roomId,
-        score_total: 0,
-        score_round: 0
-      }, {
-        onConflict: 'player_id'
-      })
+      .select('*')
+      .eq('player_id', playerId)
+      .single()
 
-    if (scoreError) {
-      console.error('Score initialization error:', scoreError)
+    if (!existingScores) {
+      // Only create scores for truly new players
+      const { error: scoreError } = await supabaseClient
+        .from('scores')
+        .insert({
+          player_id: playerId,
+          room_id: roomId,
+          score_total: 0,
+          score_round: 0
+        })
+
+      if (scoreError) {
+        console.error('Score initialization error:', scoreError)
+      }
     }
 
     return new Response(
