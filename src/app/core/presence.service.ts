@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { JoinNotificationService } from './join-notification.service';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface PresenceState {
@@ -19,7 +20,10 @@ export class PresenceService {
   onlineCount = signal(0);
   onlineUsers = signal<PresenceState[]>([]);
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService,
+    private joinNotificationService: JoinNotificationService
+  ) {}
 
   joinPresence(roomId: string, userState: PresenceState): void {
     this.leavePresence(); // Clean up any existing presence
@@ -28,6 +32,19 @@ export class PresenceService {
       onJoin: (key, current, new_) => {
         console.log('User joined:', new_);
         this.updatePresenceState();
+        
+        // Add join notifications for each new user
+        if (new_ && Array.isArray(new_)) {
+          new_.forEach((presence: any) => {
+            if (presence && presence.nick && presence.color && presence.device_id) {
+              this.joinNotificationService.addJoinNotification(
+                presence.nick,
+                presence.color || '#3B82F6',
+                presence.device_id
+              );
+            }
+          });
+        }
       },
       onLeave: (key, current, left) => {
         console.log('User left:', left);

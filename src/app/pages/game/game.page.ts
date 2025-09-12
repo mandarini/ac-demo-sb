@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameStore } from '../../state/game.store';
 import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
+import { JoinNotificationsContainerComponent } from '../../ui/join-notifications-container.component';
 
 @Component({
   selector: 'app-game',
-  imports: [CommonModule, RealtimeCursorsComponent],
+  imports: [CommonModule, RealtimeCursorsComponent, JoinNotificationsContainerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen relative overflow-hidden">
@@ -17,6 +18,9 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
         [userColor]="gameStore.currentPlayer()?.color || '#3B82F6'"
         [userId]="gameStore.currentPlayer()?.device_id"
       />
+      
+      <!-- Join Notifications -->
+      <app-join-notifications-container />
       
       <!-- Cookie Rain Container -->
       <div id="cookieRainContainer">
