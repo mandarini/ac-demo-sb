@@ -12,7 +12,7 @@ export class SupabaseService {
   constructor() {
     this.supabase = createClient<Database>(
       environment.supabaseUrl,
-      environment.supabaseAnonKey
+      environment.supabaseKey
     );
   }
 

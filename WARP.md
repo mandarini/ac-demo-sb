@@ -18,21 +18,50 @@ This document contains project-specific rules and conventions for the Cookie Cat
 - **Region**: EU-West (for London conference)
 - **Target**: Mobile-first, but should look decent on desktop
 
-### Code Style Rules
-1. **Components**: Always use standalone components with inline templates/styles
-2. **State Management**: Use Angular signals in `game.store.ts` - no RxJS subjects for state
-3. **Services**: Keep services focused and small (single responsibility)
-4. **TypeScript**: Strict mode enabled, no `any` types allowed
-5. **Imports**: Use absolute paths from `@/` alias for app imports
+### TypeScript Best Practices
+- Use strict type checking - already enabled
+- Prefer type inference when the type is obvious
+- Avoid the `any` type; use `unknown` when type is uncertain
+- Use absolute paths from `@/` alias for app imports
+
+### Angular Component Rules
+- Always use standalone components (do NOT set `standalone: true` - it's the default)
+- Use `input()` and `output()` functions instead of `@Input()` and `@Output()` decorators
+- Use `computed()` for derived state
+- Set `changeDetection: ChangeDetectionStrategy.OnPush` in all components
+- Prefer inline templates for small components (< 50 lines)
+- Do NOT use `@HostBinding` and `@HostListener` - use `host` object in decorator instead
+- Do NOT use `ngClass` - use `[class]` bindings instead
+- Do NOT use `ngStyle` - use `[style]` bindings instead
+- Use `NgOptimizedImage` for all static images (not for inline base64)
+
+### State Management Rules
+- Use Angular signals for all state management - no RxJS subjects for state
+- Use `computed()` for derived state
+- Keep state transformations pure and predictable
+- Do NOT use `mutate` on signals, use `update` or `set` instead
+- Store signals in dedicated store files (e.g., `game.store.ts`)
+
+### Template Rules
+- Keep templates simple and avoid complex logic
+- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
+- Use the async pipe to handle observables (only for non-signal streams)
+- Prefer Reactive forms over Template-driven forms
+
+### Service Rules
+- Design services around a single responsibility
+- Use `providedIn: 'root'` for singleton services
+- Use the `inject()` function instead of constructor injection
+- Keep services focused and small
 
 ## 📁 Project Structure
 
 ```
 src/app/
-├── core/          # Singleton services only
-├── state/         # Signal-based stores only
-├── pages/         # Route components only
-├── ui/            # Presentational components only
+├── core/          # Singleton services (use providedIn: 'root')
+├── state/         # Signal-based stores with computed() values
+├── pages/         # Route components (lazy loaded)
+├── ui/            # Presentational components (OnPush strategy)
 └── types/         # TypeScript interfaces/types
 
 supabase/
@@ -123,10 +152,14 @@ supabase/
 ## 🚀 Performance Guidelines
 
 ### Client Optimization
+- Use `ChangeDetectionStrategy.OnPush` for all components
+- Implement lazy loading for feature routes
 - Debounce realtime subscriptions
 - Batch DOM updates using requestAnimationFrame
 - Lazy load leaderboard data
 - Cache device ID and nickname
+- Use `computed()` for derived values to avoid recalculation
+- Use `NgOptimizedImage` for static images
 
 ### Server Optimization
 - Index on `cookies.owner` and `cookies.despawn_at`
@@ -166,6 +199,7 @@ Never commit `.env` file. Use `.env.example` for documentation.
 
 ## 🚫 What NOT to Do
 
+### Feature Restrictions
 1. **Don't** add PWA features (not needed for demo)
 2. **Don't** implement user accounts (anonymous only)
 3. **Don't** add sound effects (projector audio issues)
@@ -175,15 +209,31 @@ Never commit `.env` file. Use `.env.example` for documentation.
 7. **Don't** over-engineer for scale beyond 200 players
 8. **Don't** add complex animations that hurt performance
 
+### Angular Anti-patterns to Avoid
+9. **Don't** use NgModules - only standalone components
+10. **Don't** use `*ngIf`, `*ngFor`, `*ngSwitch` - use `@if`, `@for`, `@switch`
+11. **Don't** use `@Input()` and `@Output()` decorators - use `input()` and `output()` functions
+12. **Don't** use `@HostBinding` and `@HostListener` - use `host` object
+13. **Don't** use `ngClass` and `ngStyle` - use `[class]` and `[style]` bindings
+14. **Don't** use constructor injection - use `inject()` function
+15. **Don't** use RxJS subjects for state - use signals
+16. **Don't** use `mutate` on signals - use `update` or `set`
+17. **Don't** set `standalone: true` explicitly - it's the default
+18. **Don't** use the `any` type - use `unknown` or proper types
+
 ## ✅ Definition of Done
 
 A feature is complete when:
 1. Works on iPhone Safari and Android Chrome
 2. Handles 200 concurrent players without lag
 3. Updates reflect within 300ms across all clients
-4. No TypeScript errors or warnings
+4. No TypeScript errors or warnings (strict mode)
 5. Admin can control it from admin panel
 6. Degrades gracefully on connection loss
+7. Components use OnPush change detection
+8. All components are standalone (no NgModules)
+9. Uses native control flow (@if, @for, @switch)
+10. Services use inject() function
 
 ## 🎯 Success Metrics
 
