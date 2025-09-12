@@ -1,204 +1,273 @@
 # 🍪 Cookie Catcher
 
-A real-time multiplayer mini-game built with Angular 20 and Supabase for Angular Connect conference. Players compete to catch falling cookies and rare cats on their mobile devices while the game is displayed on a projector.
+A real-time multiplayer cookie-catching game built with Angular and Supabase for the Angular Connect conference. Players join on their mobile devices to catch falling cookies and cats that rain down from the sky, competing for the highest score on shared leaderboards.
 
 ## 🎮 Game Overview
 
-- **Multiplayer**: Up to 200 concurrent players
-- **Rounds**: 4 rounds of 30 seconds each with 10-second intermissions
-- **Scoring**: Regular cookies (🍪) = 1 point, Rare cats (🐱) = 3 points
-- **Leaderboards**: Real-time "This Round" and "All-time" scoreboards
-- **Anonymous Play**: Automatic nickname assignment from a curated pool
+- **Real-time Multiplayer**: Unlimited concurrent players in a single shared room
+- **Simple Gameplay**: Tap falling emojis to claim them before they disappear
+- **Two Collectibles**: Cookies (🍪) worth 1 point, Cats (🐱) worth 3 points (15% spawn rate)
+- **Dual Leaderboards**: "This Round" and "All-time" scoring with live updates
+- **Anonymous Play**: Auto-assigned nicknames from a curated pool of 100+ fun names
+- **Real-time Cursors**: See other players' mouse movements and interactions
+- **Admin Controls**: Game master panel for starting/stopping rounds and managing gameplay
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account
+- Supabase project
 - Angular CLI (`npm install -g @angular/cli`)
 
-### Environment Setup
+### Development Setup
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone and install**:
    ```bash
+   git clone <repository-url>
+   cd ac-demo-sb
    npm install
    ```
 
-3. Create `.env` file in the root:
-   ```env
-   SUPABASE_URL=your_supabase_project_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   ADMIN_PASSCODE=your_secret_admin_passcode
+2. **Configure Supabase**:
+   - Update `src/environments/environment.ts` with your Supabase URL and anon key
+   - Deploy the database schema: `supabase db push`
+   - Deploy Edge Functions: `supabase functions deploy`
+
+3. **Run locally**:
+   ```bash
+   ng serve
    ```
 
-4. Set up Supabase:
-   - Create a new project in EU-West region
-   - Run migrations from `supabase/migrations/`
-   - Deploy Edge Functions from `supabase/functions/`
-   - Populate nickname pool (seed script provided)
+4. **Access the app**:
+   - Game: `http://localhost:4200`
+   - Admin: `http://localhost:4200/admin`
+   - Leaderboard: `http://localhost:4200/leaderboard`
 
-### Development
+## 📱 How It Works
 
-```bash
-ng serve
-```
+### Player Experience
+1. **Join**: Visit the URL → auto-assigned nickname → "Start Playing" button
+2. **Play**: Tap falling cookies/cats as they rain down the screen
+3. **Score**: Real-time score updates, compete on live leaderboards
+4. **Persist**: Your nickname and scores persist across browser sessions via device ID
 
-Navigate to `http://localhost:4200`
+### Privacy & Device ID
+The game generates a random identifier (like `device_abc123`) stored in both your browser's localStorage and as a cookie to remember your nickname and scores between sessions. No personal information, device details, or tracking data is collected - it's just a game identifier that lets you keep the same nickname if you refresh the page or come back later. The cookie has a 1-year expiration for persistence across browser sessions.
 
-### Production Build
+### Game Mechanics
+- **Spawning**: Cookies spawn automatically at configurable rates (default: 2/second)
+- **Falling Animation**: 8-second fall time from top to bottom of screen
+- **First-tap Wins**: Atomic claiming prevents duplicate scores
+- **Rate Limiting**: 120ms cooldown between claims per player
+- **Auto Cleanup**: Expired cookies automatically removed from database
 
-```bash
-ng build
-```
+## 🏗️ Technical Architecture
 
-## 📱 How to Play
-
-1. **Join**: Players navigate to the game URL on their phones
-   - Automatic nickname assignment
-   - Persistent identity via device ID
-
-2. **Game**: Tap falling emojis to claim them
-   - First tap wins the points
-   - Rate limited to prevent spam (120ms between claims)
-   - Live leaderboard updates
-
-3. **Scoring**:
-   - 🍪 Cookie = 1 point
-   - 🐱 Cat = 3 points (rare, ~5-10% spawn rate)
-   - Scores accumulate across all rounds
-
-## 🏗️ Architecture
-
-### Frontend (Angular 20)
-- **Standalone components** with signals for state management
-- **Tailwind CSS** for styling
-- **Canvas-based** emoji rain renderer
-- **Real-time subscriptions** via Supabase Realtime
+### Frontend (Angular)
+- **Standalone Components**: Modern Angular architecture with signals
+- **Real-time State**: `GameStore` with Supabase Realtime subscriptions
+- **Smooth Animation**: 60fps cookie falling with position interpolation
+- **Responsive Design**: Mobile-first with Tailwind CSS
+- **Real-time Cursors**: Multiplayer cursor tracking via Supabase Presence
 
 ### Backend (Supabase)
-- **PostgreSQL**: Authoritative game state
-- **Edge Functions**: Secure write operations
-  - `assign_nickname`: Reserve nicknames for devices
+- **PostgreSQL**: Game state, players, scores, and configuration
+- **Edge Functions (Deno)**: Secure server-side operations
+  - `assign_nickname`: Device-based nickname reservation
   - `claim_cookie`: Atomic cookie claiming with rate limiting
-  - `spawn_cookies`: Generate falling emojis
-  - `round_lifecycle`: Manage game rounds
+  - `spawn_cookies`: Automated cookie generation
+  - `admin_actions`: Game control operations
+  - `admin-auth`: Admin authentication
 - **Realtime**: Live updates for cookies, scores, and presence
-- **RLS**: Public reads, function-only writes
+- **RLS Policies**: Public read access, function-only writes
 
-### Data Model
+### Database Schema
 
-```
-rooms (single shared room)
-├── status: idle | running | intermission
-├── round_no: current round (1-4)
-└── spawn_rate_per_sec: configurable
+```sql
+-- Game room configuration
+rooms (
+  id: 'main-room',
+  status: 'idle' | 'running' | 'intermission',
+  spawn_rate_per_sec: 2.0,
+  ttl_seconds: 8
+)
 
-nickname_pool (300 pre-loaded nicknames)
-├── nick: unique nickname
-├── is_reserved: boolean
-└── reserved_by_device_id: device UUID
+-- Player nickname pool (100+ pre-loaded)
+nickname_pool (
+  nick: 'CookieMonster', 'SwiftCatcher', etc.
+  is_reserved: boolean,
+  reserved_by_device_id: uuid
+)
 
-players (active participants)
-├── nick: assigned nickname
-├── device_id: persistent UUID
-└── last_seen_at: for presence
+-- Active players
+players (
+  nick: assigned nickname,
+  device_id: persistent browser UUID,
+  color: auto-generated hex color
+)
 
-cookies (falling emojis)
-├── type: cookie | cat
-├── value: 1 or 3
-├── x_pct: horizontal position (0-100)
-├── owner: null until claimed
-└── claimed_at: timestamp
+-- Falling objects
+cookies (
+  type: 'cookie' | 'cat',
+  value: 1 | 3,
+  x_pct: horizontal position (0-100),
+  spawned_at: timestamp,
+  despawn_at: timestamp,
+  owner: null until claimed
+)
 
-scores (cumulative scoring)
-├── score_total: all-time score
-├── score_round: current round score
-└── last_claim_at: rate limiting
+-- Player scores
+scores (
+  score_total: cumulative all-time score,
+  score_round: current round score,
+  last_claim_at: for rate limiting
+)
 ```
 
 ## 🔐 Admin Panel
 
-Access at `/admin` with passcode authentication.
+Access `/admin` with admin passcode authentication.
 
-**Controls:**
-- Start/Stop rounds
-- Adjust spawn rate
-- Clear active cookies
-- Reset scores (round or all-time)
+### Game Controls
+- **Start Game**: Begin cookie spawning and scoring
+- **Stop Game**: End current session, clear active cookies
+- **Spawn Rate**: Adjust cookies per second (0.5-10)
+- **Manual Spawn**: Instantly create 100 cookies for testing
 
-**Diagnostics:**
-- Current game status
-- Online player count
-- Round timer
-- Claim rate monitoring
+### Score Management
+- **Reset Round Scores**: Clear current round, keep all-time totals
+- **Reset All Scores**: Complete score wipe (with confirmation)
 
-## 🎯 Performance Targets
+### Real-time Status
+- **Game State**: Current status (idle/running/intermission)
+- **Player Count**: Live online player counter
+- **Admin Cursors**: See other admins' mouse movements
 
-- **Concurrency**: 200+ simultaneous players
-- **Latency**: <300ms for claim → leaderboard update
-- **Animation**: 60fps emoji rain (throttled if needed)
-- **Rate Limiting**: Server-enforced 120ms between claims per player
+## 🎯 Key Features
+
+### Real-time Synchronization
+- **Sub-second Updates**: Cookie spawns and claims propagate instantly
+- **Optimistic UI**: Immediate local updates with server reconciliation
+- **Presence Tracking**: Live online player count
+- **Cursor Sharing**: See other players' mouse movements
+
+### Performance Optimizations
+- **Efficient Queries**: Indexed database queries for fast leaderboards
+- **Smart Cleanup**: Automatic removal of expired cookies
+- **Rate Limiting**: Prevents spam and ensures fair play
+- **Change Detection**: OnPush strategy with signals for optimal rendering
+
+### Mobile-First Design
+- **Touch Optimized**: Large tap targets for mobile gameplay
+- **Responsive Layout**: Adapts to all screen sizes
+- **Fast Animations**: Hardware-accelerated CSS transforms
+- **Low Latency**: Direct WebSocket connections to Supabase
 
 ## 🛠️ Development
 
-### Key Files
-
+### Project Structure
 ```
 src/app/
-├── core/               # Services (Supabase, device, presence)
-├── state/              # Game store with signals
-├── pages/              # Join, Game, Admin routes
-└── ui/                 # Playfield, Leaderboard, HUD components
+├── core/                    # Services
+│   ├── supabase.service.ts  # Database client & Edge Functions
+│   ├── device.service.ts    # Persistent device ID generation
+│   ├── presence.service.ts  # Real-time presence tracking
+│   └── cursor.service.ts    # Multiplayer cursor tracking
+├── state/
+│   └── game.store.ts        # Central game state with signals
+├── pages/
+│   ├── join/               # Landing page with nickname assignment
+│   ├── game/               # Main gameplay screen
+│   ├── admin/              # Admin control panel
+│   └── leaderboard/        # Standalone leaderboard view
+└── ui/                     # Reusable components
+    ├── realtime-cursors.component.ts
+    ├── join-notification.component.ts
+    └── footer.component.ts
 
 supabase/
-├── migrations/         # Database schema
-└── functions/          # Edge Functions
+├── migrations/             # Database schema evolution
+│   └── *.sql              # Table definitions, indexes, RLS policies
+└── functions/             # Edge Functions (Deno)
+    ├── assign_nickname/   # Player registration
+    ├── claim_cookie/      # Score atomic updates
+    ├── spawn_cookies/     # Cookie generation
+    ├── admin_actions/     # Game control
+    └── admin-auth/        # Admin authentication
 ```
 
-### Testing Multiplayer Locally
+### Local Development
+1. **Multiple Players**: Open multiple browser tabs or incognito windows
+2. **Admin Testing**: Use `/admin` to control game flow
+3. **Real-time Debug**: Check browser DevTools for WebSocket messages
+4. **Database Inspection**: Use Supabase dashboard to view live data
 
-1. Open multiple browser tabs/windows
-2. Use incognito mode for different device IDs
-3. Admin panel to control game flow
+## 🚀 Deployment
 
-## 📊 Leaderboard Rules
+### Supabase Setup
+1. **Create Project**: New Supabase project (any region)
+2. **Run Migrations**: `supabase db push` to create schema
+3. **Deploy Functions**: `supabase functions deploy --no-verify-jwt`
+4. **Set Admin Password**: Configure `ADMIN_PASSCODE` in Edge Function secrets
 
-- **This Round**: Sorted by `score_round`, ties broken alphabetically
-- **All-time**: Sorted by `score_total`, ties broken alphabetically
-- Shows top 10 + your rank
+### Frontend Deployment
+1. **Build**: `ng build` generates optimized static files
+2. **Deploy**: Upload `dist/ac-demo-sb/browser/` to any static host
+3. **Configure**: Ensure `_redirects` file handles Angular routing
 
-## 🚢 Deployment
-
-1. Deploy Supabase functions:
-   ```bash
-   supabase functions deploy
-   ```
-
-2. Build Angular app:
-   ```bash
-   ng build
-   ```
-
-3. Deploy to your hosting provider (Vercel, Netlify, etc.)
+### Recommended Hosts
+- **Netlify**: Automatic Angular routing support
+- **Vercel**: Zero-config deployment
+- **GitHub Pages**: Free hosting with custom domains
 
 ## 🎨 Customization
 
-- **Spawn Rate**: Adjust in admin panel or `rooms.spawn_rate_per_sec`
-- **Emoji Types**: Modify spawn logic in `spawn_cookies` function
-- **Round Duration**: Update `ROUND_DURATION` and `INTERMISSION_DURATION` constants
-- **Nickname Pool**: Add more nicknames to database
+### Game Tuning
+- **Spawn Rate**: Modify `rooms.spawn_rate_per_sec` (default: 2.0)
+- **Fall Speed**: Adjust `rooms.ttl_seconds` (default: 8)
+- **Cat Rarity**: Change probability in `spawn_cookies` function (default: 15%)
+- **Rate Limit**: Modify claim cooldown in `claim_cookie` (default: 120ms)
+
+### Visual Customization
+- **Emojis**: Update cookie types in spawn functions
+- **Colors**: Modify player color palette in `assign_nickname`
+- **Nicknames**: Add more names to `nickname_pool` table
+- **Styling**: Customize Tailwind classes throughout components
+
+## 📊 Conference Demo Tips
+
+### Pre-Event Setup
+1. **Load Test**: Verify performance with expected player count
+2. **Admin Training**: Brief operators on game controls
+3. **Backup Plan**: Have admin passcode and reset procedures ready
+4. **Network**: Ensure stable internet for real-time features
+
+### During Event
+1. **Start Slow**: Begin with lower spawn rates, increase gradually
+2. **Monitor Performance**: Watch for lag, adjust spawn rate accordingly
+3. **Engage Audience**: Use admin panel to create exciting moments
+4. **Reset Between Sessions**: Clear scores between different groups
+
+### Troubleshooting
+- **Slow Performance**: Reduce spawn rate or clear active cookies
+- **Players Can't Join**: Check Supabase connection and nickname pool
+- **Scores Not Updating**: Verify Edge Functions are deployed
+- **Admin Issues**: Confirm admin passcode and authentication
 
 ## 📝 License
 
-MIT
+MIT License - Feel free to use for your own conferences and events!
 
 ## 🔗 Links
 
-- [GitHub](https://github.com/your-username)
-- [Twitter](https://twitter.com/your-handle)
+- **Creator**: [Katerina Skroumpelou](https://github.com/mandarini)
+- **Twitter**: [@psybercity](https://x.com/psybercity)
+- **Website**: [psyber.city](https://psyber.city)
+- **Source Code**: [GitHub Repository](https://github.com/mandarini/ac-demo-sb)
+- **Supabase Docs**: [supabase.com](https://supabase.com/)
 
 ---
 
-Built with ❤️ for Angular Connect
+**Built with ❤️ for Angular Connect 2025**  
+*Showcasing the power of Angular + Supabase for real-time multiplayer experiences*
