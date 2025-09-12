@@ -43,6 +43,7 @@ A real-time multiplayer cookie-catching game built with Angular and Supabase for
    - Game: `http://localhost:4200`
    - Admin: `http://localhost:4200/admin`
    - Leaderboard: `http://localhost:4200/leaderboard`
+   - **Live Demo**: `https://ngdemo-sb.netlify.app`
 
 ## 📱 How It Works
 
