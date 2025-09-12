@@ -2,15 +2,24 @@ import { Component, Input, OnInit, OnDestroy, HostListener } from '@angular/core
 import { CommonModule } from '@angular/common';
 import { CursorService } from '../core/cursor.service';
 import { CursorComponent } from './cursor.component';
+import { TouchRippleComponent } from './touch-ripple.component';
 
 @Component({
   selector: 'app-realtime-cursors',
   standalone: true,
-  imports: [CommonModule, CursorComponent],
+  imports: [CommonModule, CursorComponent, TouchRippleComponent],
   template: `
     <div class="cursors-overlay">
-      @for (cursor of cursorService.cursors(); track cursor.userId) {
-        <app-cursor [cursor]="cursor" />
+      <!-- Desktop Cursors -->
+      @if (!cursorService.isMobileDevice()) {
+        @for (cursor of cursorService.cursors(); track cursor.userId) {
+          <app-cursor [cursor]="cursor" />
+        }
+      }
+      
+      <!-- Mobile Touch Ripples -->
+      @for (ripple of cursorService.touchRipples(); track ripple.id) {
+        <app-touch-ripple [ripple]="ripple" />
       }
     </div>
   `,
@@ -56,9 +65,10 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
     this.cursorService.leaveCursorSharing();
   }
 
+  // Desktop mouse events
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent) {
-    if (this.cursorService.isActive()) {
+    if (this.cursorService.isActive() && !this.cursorService.isMobileDevice()) {
       const position = this.cursorService.getRelativePosition(event);
       this.cursorService.updateCursorPosition(position.x, position.y);
     }
@@ -68,5 +78,43 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
   onMouseLeave(event: MouseEvent) {
     // When mouse leaves the document, we could optionally hide our cursor
     // For now, we'll keep it active as long as the component is mounted
+  }
+
+  // Mobile touch events
+  @HostListener('document:touchstart', ['$event'])
+  onTouchStart(event: TouchEvent) {
+    if (this.cursorService.isActive() && this.cursorService.isMobileDevice()) {
+      event.preventDefault(); // Prevent default touch behavior
+      const touch = event.touches[0];
+      if (touch) {
+        const position = this.cursorService.getRelativeTouchPosition(touch);
+        this.cursorService.sendTouchRipple(position.x, position.y, 'tap');
+      }
+    }
+  }
+
+  @HostListener('document:touchmove', ['$event'])
+  onTouchMove(event: TouchEvent) {
+    if (this.cursorService.isActive() && this.cursorService.isMobileDevice()) {
+      // Prevent scrolling during touch move for better ripple experience
+      event.preventDefault();
+      const touch = event.touches[0];
+      if (touch) {
+        const position = this.cursorService.getRelativeTouchPosition(touch);
+        this.cursorService.sendTouchRipple(position.x, position.y, 'drag');
+      }
+    }
+  }
+
+  @HostListener('document:touchend', ['$event'])
+  onTouchEnd(event: TouchEvent) {
+    if (this.cursorService.isActive() && this.cursorService.isMobileDevice()) {
+      event.preventDefault();
+      const touch = event.changedTouches[0];
+      if (touch) {
+        const position = this.cursorService.getRelativeTouchPosition(touch);
+        this.cursorService.sendTouchRipple(position.x, position.y, 'release');
+      }
+    }
   }
 }

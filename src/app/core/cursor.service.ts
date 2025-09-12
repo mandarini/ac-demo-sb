@@ -15,6 +15,15 @@ export interface UserCursor {
   position: CursorPosition;
 }
 
+export interface TouchRipple {
+  id: string;
+  userId: string;
+  nick: string;
+  color: string;
+  position: CursorPosition;
+  type: 'tap' | 'drag' | 'release';
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,9 +35,14 @@ export class CursorService {
   
   // Signals for reactive state
   cursors = signal<UserCursor[]>([]);
+  touchRipples = signal<TouchRipple[]>([]);
   isActive = signal(false);
+  isMobileDevice = signal(false);
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) {
+    // Detect if this is a mobile device
+    this.isMobileDevice.set(this.detectMobileDevice());
+  }
 
   /**
    * Join cursor sharing for a specific room
@@ -46,6 +60,9 @@ export class CursorService {
       })
       .on('broadcast', { event: 'cursor_move' }, (payload) => {
         this.handleCursorUpdate(payload['payload'] as UserCursor);
+      })
+      .on('broadcast', { event: 'touch_ripple' }, (payload) => {
+        this.handleTouchRipple(payload['payload'] as TouchRipple);
       })
       .on('broadcast', { event: 'cursor_leave' }, (payload) => {
         this.handleCursorLeave(payload['payload'].userId);
@@ -77,6 +94,7 @@ export class CursorService {
     this.currentRoomId = null;
     this.currentUser = null;
     this.cursors.set([]);
+    this.touchRipples.set([]);
     this.isActive.set(false);
     
     // Clear any pending throttle
@@ -87,10 +105,10 @@ export class CursorService {
   }
 
   /**
-   * Update cursor position (throttled for performance)
+   * Update cursor position (throttled for performance) - Desktop only
    */
   updateCursorPosition(x: number, y: number): void {
-    if (!this.channel || !this.currentUser || !this.isActive()) {
+    if (!this.channel || !this.currentUser || !this.isActive() || this.isMobileDevice()) {
       return;
     }
 
@@ -124,6 +142,34 @@ export class CursorService {
   }
 
   /**
+   * Send touch ripple (Mobile only)
+   */
+  sendTouchRipple(x: number, y: number, type: 'tap' | 'drag' | 'release' = 'tap'): void {
+    if (!this.channel || !this.currentUser || !this.isActive()) {
+      return;
+    }
+
+    const rippleData: TouchRipple = {
+      id: `${this.currentUser.userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: this.currentUser.userId,
+      nick: this.currentUser.nick,
+      color: this.currentUser.color,
+      position: {
+        x,
+        y,
+        timestamp: Date.now()
+      },
+      type
+    };
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'touch_ripple',
+      payload: rippleData
+    });
+  }
+
+  /**
    * Handle incoming cursor updates from other users
    */
   private handleCursorUpdate(cursorData: UserCursor): void {
@@ -146,10 +192,25 @@ export class CursorService {
   }
 
   /**
+   * Handle incoming touch ripple from other users
+   */
+  private handleTouchRipple(rippleData: TouchRipple): void {
+    this.touchRipples.update(ripples => [...ripples, rippleData]);
+
+    // Auto-remove ripple after animation duration
+    setTimeout(() => {
+      this.touchRipples.update(ripples => 
+        ripples.filter(r => r.id !== rippleData.id)
+      );
+    }, 2000); // Remove after 2 seconds
+  }
+
+  /**
    * Handle user leaving cursor sharing
    */
   private handleCursorLeave(userId: string): void {
     this.cursors.update(cursors => cursors.filter(c => c.userId !== userId));
+    this.touchRipples.update(ripples => ripples.filter(r => r.userId !== userId));
   }
 
   /**
@@ -171,5 +232,24 @@ export class CursorService {
       x: (event.clientX / window.innerWidth) * 100, // Convert to percentage
       y: (event.clientY / window.innerHeight) * 100
     };
+  }
+
+  /**
+   * Get touch position relative to viewport
+   */
+  getRelativeTouchPosition(touch: Touch): { x: number; y: number } {
+    return {
+      x: (touch.clientX / window.innerWidth) * 100, // Convert to percentage
+      y: (touch.clientY / window.innerHeight) * 100
+    };
+  }
+
+  /**
+   * Detect if this is a mobile device
+   */
+  private detectMobileDevice(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || window.innerWidth <= 768
+      || 'ontouchstart' in window;
   }
 }
