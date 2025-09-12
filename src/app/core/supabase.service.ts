@@ -49,27 +49,43 @@ export class SupabaseService {
 
   // Realtime subscriptions
   subscribeToRoom(roomId: string, callback: (payload: any) => void): RealtimeChannel {
-    return this.supabase
+    console.log('🔔 Setting up room subscription for:', roomId);
+    const channel = this.supabase
       .channel(`room_${roomId}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public',
         table: 'rooms',
         filter: `id=eq.${roomId}`
-      }, callback)
-      .subscribe();
+      }, (payload) => {
+        console.log('🔔 Raw room payload received:', payload);
+        callback(payload);
+      })
+      .subscribe((status) => {
+        console.log('🔔 Room subscription status:', status);
+      });
+    
+    return channel;
   }
 
   subscribeToCookies(roomId: string, callback: (payload: any) => void): RealtimeChannel {
-    return this.supabase
+    console.log('🔔 Setting up cookies subscription for:', roomId);
+    const channel = this.supabase
       .channel(`cookies_${roomId}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public',
         table: 'cookies',
         filter: `room_id=eq.${roomId}`
-      }, callback)
-      .subscribe();
+      }, (payload) => {
+        console.log('🔔 Raw cookie payload received:', payload);
+        callback(payload);
+      })
+      .subscribe((status) => {
+        console.log('🔔 Cookies subscription status:', status);
+      });
+    
+    return channel;
   }
 
   subscribeToScores(roomId: string, callback: (payload: any) => void): RealtimeChannel {

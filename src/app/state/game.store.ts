@@ -193,7 +193,9 @@ export class GameStore {
 
     // Subscribe to room changes
     const roomSub = this.supabase.subscribeToRoom(this.roomId, (payload) => {
+      console.log('🏠 Room change received:', payload);
       if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+        console.log('🏠 Updating room state:', payload.new);
         this.room.set(payload.new as Room);
       }
     });
@@ -201,7 +203,9 @@ export class GameStore {
 
     // Subscribe to cookies
     const cookiesSub = this.supabase.subscribeToCookies(this.roomId, (payload) => {
+      console.log('🍪 Cookie change received:', payload);
       if (payload.eventType === 'INSERT') {
+        console.log('🍪 Adding new cookie:', payload.new);
         this.cookies.update(cookies => {
           // Check if cookie already exists to avoid duplicates
           const exists = cookies.some(c => c.id === payload.new.id);
@@ -211,12 +215,14 @@ export class GameStore {
           return cookies;
         });
       } else if (payload.eventType === 'UPDATE') {
+        console.log('🍪 Updating cookie:', payload.new);
         this.cookies.update(cookies => 
           cookies.map(cookie => 
             cookie.id === payload.new.id ? payload.new as Cookie : cookie
           )
         );
       } else if (payload.eventType === 'DELETE') {
+        console.log('🍪 Deleting cookie:', payload.old);
         this.cookies.update(cookies => 
           cookies.filter(cookie => cookie.id !== payload.old.id)
         );
@@ -226,7 +232,9 @@ export class GameStore {
 
     // Subscribe to scores
     const scoresSub = this.supabase.subscribeToScores(this.roomId, (payload) => {
+      console.log('📊 Score change received:', payload);
       if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+        console.log('📊 Updating scores:', payload.new);
         this.scores.update(scores => {
           const existing = scores.findIndex(s => s.player_id === payload.new.player_id);
           if (existing >= 0) {
