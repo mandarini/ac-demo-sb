@@ -142,6 +142,14 @@ export class SupabaseService {
   async getLeaderboard(roomId: string, type: 'round' | 'total') {
     const scoreField = type === 'round' ? 'score_round' : 'score_total';
     
+    // Define the type for the joined query result
+    type ScoreWithPlayer = Database['public']['Tables']['scores']['Row'] & {
+      players: {
+        nick: string;
+        color: string | null;
+      };
+    };
+    
     const { data, error } = await this.supabase
       .from('scores')
       .select(`
@@ -153,7 +161,8 @@ export class SupabaseService {
       `)
       .eq('room_id', roomId)
       .gt(scoreField, 0)
-      .order(scoreField, { ascending: false });
+      .order(scoreField, { ascending: false })
+      .returns<ScoreWithPlayer[]>();
     
     if (error) throw error;
     

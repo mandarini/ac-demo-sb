@@ -30,7 +30,7 @@ export interface Player {
   id: string;
   room_id: string;
   nick: string;
-  color?: string;
+  color: string | null;
   device_id: string;
   joined_at: string;
   last_seen_at: string;
@@ -44,7 +44,7 @@ export interface Score {
   last_claim_at: string | null;
   players: {
     nick: string;
-    color?: string;
+    color: string | null;
   };
 }
 
