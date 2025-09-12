@@ -93,9 +93,24 @@ export class SupabaseService {
       config: { presence: { key: roomId } }
     });
 
-    if (callbacks.onJoin) channel.on('presence', { event: 'join' }, callbacks.onJoin);
-    if (callbacks.onLeave) channel.on('presence', { event: 'leave' }, callbacks.onLeave);
-    if (callbacks.onSync) channel.on('presence', { event: 'sync' }, callbacks.onSync);
+    // Set up presence event handlers
+    if (callbacks.onSync) {
+      channel.on('presence', { event: 'sync' }, () => {
+        callbacks.onSync!();
+      });
+    }
+    
+    if (callbacks.onJoin) {
+      channel.on('presence', { event: 'join' }, ({ key, newPresences }: any) => {
+        callbacks.onJoin!(key, channel.presenceState(), newPresences);
+      });
+    }
+    
+    if (callbacks.onLeave) {
+      channel.on('presence', { event: 'leave' }, ({ key, leftPresences }: any) => {
+        callbacks.onLeave!(key, channel.presenceState(), leftPresences);
+      });
+    }
 
     return channel.subscribe();
   }
@@ -138,11 +153,22 @@ export class SupabaseService {
       `)
       .eq('room_id', roomId)
       .gt(scoreField, 0)
-      .order(scoreField, { ascending: false })
-      .order('players.nick', { ascending: true });
+      .order(scoreField, { ascending: false });
     
     if (error) throw error;
-    return data;
+    
+    // Sort by nickname as secondary sort on client side
+    // since Supabase doesn't support ordering by joined table columns
+    const sortedData = data?.sort((a, b) => {
+      // First sort by score (already done by DB, but maintain it)
+      const scoreDiff = b[scoreField] - a[scoreField];
+      if (scoreDiff !== 0) return scoreDiff;
+      
+      // Then sort by nickname
+      return (a.players?.nick || '').localeCompare(b.players?.nick || '');
+    });
+    
+    return sortedData || [];
   }
 
   async getPlayerCount(roomId: string) {

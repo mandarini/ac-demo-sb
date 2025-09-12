@@ -60,9 +60,16 @@ export class PresenceService {
     const users: PresenceState[] = [];
     
     Object.keys(presenceState).forEach(key => {
-      const user = presenceState[key][0] as PresenceState;
-      if (user) {
-        users.push(user);
+      // Each key contains an array of presence records
+      if (presenceState[key] && presenceState[key].length > 0) {
+        // Get the first record for each key (most recent)
+        const presenceRecord = presenceState[key][0];
+        // Check if the record has the expected structure
+        if (presenceRecord && typeof presenceRecord === 'object' && 
+            'nick' in presenceRecord && 'device_id' in presenceRecord && 
+            'last_seen' in presenceRecord) {
+          users.push(presenceRecord as PresenceState);
+        }
       }
     });
 
