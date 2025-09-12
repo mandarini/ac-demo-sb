@@ -34,7 +34,7 @@ serve(async (req) => {
         return await updateSpawnRate(supabaseClient, roomId, params.rate)
       
       case 'spawn_cookies':
-        return await spawnCookies(supabaseClient, roomId, params.count || 10)
+        return await spawnCookies(supabaseClient, roomId, params.count || 100)
       
       case 'clear_cookies':
         return await clearCookies(supabaseClient, roomId)

@@ -103,11 +103,11 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
                   Update Rate
                 </button>
                 <button
-                  (click)="adminAction('spawn_cookies', { count: 10 })"
+                  (click)="adminAction('spawn_cookies', { count: 100 })"
                   class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
                   [disabled]="loading()"
                 >
-                  Spawn 10 Cookies
+                  Spawn 100 Cookies
                 </button>
               </div>
             </div>
