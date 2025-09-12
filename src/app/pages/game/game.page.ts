@@ -87,7 +87,17 @@ export class GamePage implements OnInit, OnDestroy {
     const elapsed = now - spawnTime;
     const progress = Math.min(elapsed / totalTime, 1);
     
-    return progress * window.innerHeight;
+    const position = progress * window.innerHeight;
+    // Log first cookie details for debugging
+    if (cookie.id === this.gameStore.activeCookies()[0]?.id) {
+      console.log('Cookie position:', {
+        progress,
+        position,
+        elapsed: elapsed / 1000,
+        totalTime: totalTime / 1000
+      });
+    }
+    return position;
   }
 
   async claimCookie(cookieId: string) {

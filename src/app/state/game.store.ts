@@ -130,14 +130,18 @@ export class GameStore {
   // Active cookies (not claimed and not expired)
   activeCookies = computed(() => {
     const now = new Date().getTime();
-    return this.cookies().filter(cookie => 
+    const allCookies = this.cookies();
+    const active = allCookies.filter(cookie => 
       !cookie.owner && 
       new Date(cookie.despawn_at).getTime() > now
     );
+    console.log('Active cookies:', active.length, 'of', allCookies.length, 'total cookies');
+    return active;
   });
 
   private subscriptions: any[] = [];
   private gameTimer: any = null;
+  private spawnTimer: any = null;
 
   constructor(
     private supabase: SupabaseService,
@@ -146,6 +150,8 @@ export class GameStore {
   ) {
     // Start timer for countdown
     this.startGameTimer();
+    // Start cookie spawning timer
+    this.startSpawnTimer();
   }
 
   // Initialize player and join game
@@ -192,6 +198,7 @@ export class GameStore {
 
     // Subscribe to cookies
     const cookiesSub = this.supabase.subscribeToCookies(this.roomId, (payload) => {
+      console.log('Cookie event received:', payload.eventType, payload.new || payload.old);
       if (payload.eventType === 'INSERT') {
         this.cookies.update(cookies => [...cookies, payload.new as Cookie]);
       } else if (payload.eventType === 'UPDATE') {
@@ -237,6 +244,7 @@ export class GameStore {
 
       // Load active cookies
       const cookiesData = await this.supabase.getActiveCookies(this.roomId);
+      console.log('Initial cookies loaded:', cookiesData.length);
       this.cookies.set(cookiesData);
 
       // Load leaderboard
@@ -290,6 +298,29 @@ export class GameStore {
     }, 1000);
   }
 
+  // Timer for spawning cookies
+  private startSpawnTimer(): void {
+    this.spawnTimer = setInterval(async () => {
+      const room = this.room();
+      // Only spawn cookies if game is running
+      if (room?.status === 'running') {
+        try {
+          // Call the spawn_cookies Edge Function
+          const { data, error } = await this.supabase.client.functions.invoke('spawn_cookies', {
+            body: {}
+          });
+          if (error) {
+            console.error('Failed to spawn cookies:', error);
+          } else {
+            console.log('Cookies spawned:', data);
+          }
+        } catch (err) {
+          console.error('Error spawning cookies:', err);
+        }
+      }
+    }, 1000); // Spawn every second based on spawn rate
+  }
+
   // Cleanup
   private cleanupSubscriptions(): void {
     this.subscriptions.forEach(sub => {
@@ -307,6 +338,11 @@ export class GameStore {
     if (this.gameTimer) {
       clearInterval(this.gameTimer);
       this.gameTimer = null;
+    }
+    
+    if (this.spawnTimer) {
+      clearInterval(this.spawnTimer);
+      this.spawnTimer = null;
     }
   }
 }

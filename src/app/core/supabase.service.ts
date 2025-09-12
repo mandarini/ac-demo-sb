@@ -142,14 +142,6 @@ export class SupabaseService {
   async getLeaderboard(roomId: string, type: 'round' | 'total') {
     const scoreField = type === 'round' ? 'score_round' : 'score_total';
     
-    // Define the type for the joined query result
-    type ScoreWithPlayer = Database['public']['Tables']['scores']['Row'] & {
-      players: {
-        nick: string;
-        color: string | null;
-      };
-    };
-    
     const { data, error } = await this.supabase
       .from('scores')
       .select(`
@@ -161,14 +153,13 @@ export class SupabaseService {
       `)
       .eq('room_id', roomId)
       .gt(scoreField, 0)
-      .order(scoreField, { ascending: false })
-      .returns<ScoreWithPlayer[]>();
+      .order(scoreField, { ascending: false });
     
     if (error) throw error;
     
     // Sort by nickname as secondary sort on client side
     // since Supabase doesn't support ordering by joined table columns
-    const sortedData = data?.sort((a, b) => {
+    const sortedData = data?.sort((a: any, b: any) => {
       // First sort by score (already done by DB, but maintain it)
       const scoreDiff = b[scoreField] - a[scoreField];
       if (scoreDiff !== 0) return scoreDiff;
