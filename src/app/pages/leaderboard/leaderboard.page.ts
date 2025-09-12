@@ -229,8 +229,10 @@ export class LeaderboardPage implements OnInit, OnDestroy {
   async ngOnInit() {
     // Initialize the game store to get realtime data
     if (!this.gameStore.currentPlayer()) {
-      // If no current player, we still want to show leaderboard data
-      // Start subscriptions without joining as a player
+      // If no current player, start leaderboard subscriptions without joining as a player
+      await this.gameStore.startLeaderboardSubscriptions();
+    } else {
+      // If already a player, just ensure we have latest data
       await this.gameStore.loadInitialData();
     }
   }

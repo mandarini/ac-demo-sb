@@ -180,6 +180,70 @@ export class GameStore {
     }
   }
 
+  // Start realtime subscriptions for leaderboard viewing (without joining as player)
+  async startLeaderboardSubscriptions(): Promise<void> {
+    // Clean up existing subscriptions
+    this.cleanupSubscriptions();
+
+    // Load initial data first
+    await this.loadInitialData();
+
+    // Subscribe to room changes
+    const roomSub = this.supabase.subscribeToRoom(this.roomId, (payload) => {
+      console.log('🏠 Room change received:', payload);
+      if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+        console.log('🏠 Updating room state:', payload.new);
+        this.room.set(payload.new as Room);
+      }
+    });
+    this.subscriptions.push(roomSub);
+
+    // Subscribe to scores (most important for leaderboard)
+    const scoresSub = this.supabase.subscribeToScores(this.roomId, async (payload) => {
+      console.log('📊 Score change received:', payload);
+      if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+        console.log('📊 Updating scores:', payload.new);
+        
+        // Fetch the complete score data with player info
+        try {
+          const { data: scoreWithPlayer, error } = await this.supabase.client
+            .from('scores')
+            .select(`
+              *,
+              players!inner (
+                nick,
+                color
+              )
+            `)
+            .eq('player_id', payload.new.player_id)
+            .eq('room_id', this.roomId)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching complete score data:', error);
+            return;
+          }
+          
+          this.scores.update(scores => {
+            const existing = scores.findIndex(s => s.player_id === payload.new.player_id);
+            if (existing >= 0) {
+              // Create a new array with the updated score object (with player data)
+              return scores.map(score => 
+                score.player_id === payload.new.player_id ? scoreWithPlayer as Score : score
+              );
+            } else {
+              // Add new score with player data
+              return [...scores, scoreWithPlayer as Score];
+            }
+          });
+        } catch (err) {
+          console.error('Failed to fetch score with player data:', err);
+        }
+      }
+    });
+    this.subscriptions.push(scoresSub);
+  }
+
   // Start realtime subscriptions
   private async startSubscriptions(): Promise<void> {
     // Clean up existing subscriptions
@@ -228,19 +292,46 @@ export class GameStore {
     this.subscriptions.push(cookiesSub);
 
     // Subscribe to scores
-    const scoresSub = this.supabase.subscribeToScores(this.roomId, (payload) => {
+    const scoresSub = this.supabase.subscribeToScores(this.roomId, async (payload) => {
       console.log('📊 Score change received:', payload);
       if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
         console.log('📊 Updating scores:', payload.new);
-        this.scores.update(scores => {
-          const existing = scores.findIndex(s => s.player_id === payload.new.player_id);
-          if (existing >= 0) {
-            scores[existing] = payload.new as Score;
-          } else {
-            scores.push(payload.new as Score);
+        
+        // Fetch the complete score data with player info
+        try {
+          const { data: scoreWithPlayer, error } = await this.supabase.client
+            .from('scores')
+            .select(`
+              *,
+              players!inner (
+                nick,
+                color
+              )
+            `)
+            .eq('player_id', payload.new.player_id)
+            .eq('room_id', this.roomId)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching complete score data:', error);
+            return;
           }
-          return [...scores];
-        });
+          
+          this.scores.update(scores => {
+            const existing = scores.findIndex(s => s.player_id === payload.new.player_id);
+            if (existing >= 0) {
+              // Create a new array with the updated score object (with player data)
+              return scores.map(score => 
+                score.player_id === payload.new.player_id ? scoreWithPlayer as Score : score
+              );
+            } else {
+              // Add new score with player data
+              return [...scores, scoreWithPlayer as Score];
+            }
+          });
+        } catch (err) {
+          console.error('Failed to fetch score with player data:', err);
+        }
       }
     });
     this.subscriptions.push(scoresSub);
