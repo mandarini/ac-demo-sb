@@ -3,12 +3,23 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../core/supabase.service';
+import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
 
 @Component({
   selector: 'app-admin',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RealtimeCursorsComponent],
   template: `
     <div class="min-h-screen p-4">
+      <!-- Realtime Cursors for Admin Collaboration -->
+      @if (authenticated()) {
+        <app-realtime-cursors 
+          roomName="admin-room"
+          username="Admin"
+          userColor="#EF4444"
+          userId="admin"
+        />
+      }
+      
       <div class="max-w-4xl mx-auto">
         <h1 class="text-3xl font-bold text-white mb-8">Admin Panel</h1>
 

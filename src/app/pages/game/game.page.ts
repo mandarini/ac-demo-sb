@@ -2,13 +2,22 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, effect, ChangeDe
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameStore } from '../../state/game.store';
+import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
 
 @Component({
   selector: 'app-game',
-  imports: [CommonModule],
+  imports: [CommonModule, RealtimeCursorsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen relative overflow-hidden">
+      <!-- Realtime Cursors -->
+      <app-realtime-cursors 
+        roomName="main-room"
+        [username]="gameStore.currentPlayer()?.nick || 'Player'"
+        [userColor]="gameStore.currentPlayer()?.color || '#3B82F6'"
+        [userId]="gameStore.currentPlayer()?.device_id"
+      />
+      
       <!-- Cookie Rain Container -->
       <div id="cookieRainContainer">
         @for (cookie of animatedCookies; track cookie.id) {
