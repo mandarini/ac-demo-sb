@@ -1,27 +1,26 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameStore } from '../../state/game.store';
-import { CookieComponent } from '../../ui/cookie.component';
 
 @Component({
   selector: 'app-game',
-  imports: [CommonModule, CookieComponent],
+  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen relative overflow-hidden">
-      <!-- Game Canvas -->
-      <div class="absolute inset-0">
-        <div class="relative w-full h-full" id="game-canvas">
-          <!-- Cookies will be rendered here -->
-          @for (cookie of gameStore.activeCookies(); track cookie.id) {
-            <app-cookie
-              [cookie]="cookie"
-              (claim)="claimCookie($event)"
-              (expired)="handleExpired($event)"
-            />
-          }
-        </div>
+      <!-- Cookie Rain Container -->
+      <div id="cookieRainContainer">
+        @for (cookie of animatedCookies; track cookie.id) {
+          <div 
+            class="cookie"
+            [style.left]="cookie.style.left"
+            [style.animation-duration]="cookie.style.animationDuration"
+            (click)="claimCookie(cookie.id)"
+          >
+            {{ cookie.emoji }}
+          </div>
+        }
       </div>
 
       <!-- HUD -->
@@ -58,33 +57,83 @@ import { CookieComponent } from '../../ui/cookie.component';
       </button>
     </div>
   `,
-  styles: []
+  styles: [`
+    #cookieRainContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      z-index: 100;
+      pointer-events: none;
+    }
+    
+    .cookie {
+      position: absolute;
+      font-size: 40px;
+      animation: fall linear;
+      cursor: pointer;
+      pointer-events: auto;
+      user-select: none;
+    }
+    
+    .cookie:hover {
+      transform: scale(1.2);
+    }
+    
+    @keyframes fall {
+      from {
+        transform: translateY(-100px);
+      }
+      to {
+        transform: translateY(calc(100vh + 100px));
+      }
+    }
+  `]
 })
 export class GamePage implements OnInit, OnDestroy {
+  // Simple animation buffer for rendering
+  animatedCookies: Array<{
+    id: string;
+    emoji: string;
+    style: { left: string; animationDuration: string };
+  }> = [];
+
   constructor(
     public gameStore: GameStore,
     private router: Router
-  ) {}
+  ) {
+    // When active cookies change, re-render the simple animated list
+    effect(() => {
+      const active = this.gameStore.activeCookies();
+      // Map to simple objects for rendering
+      this.animatedCookies = active.map(c => ({
+        id: c.id,
+        emoji: c.type === 'cat' ? '🐱' : '🍪',
+        style: {
+          left: Math.random() * 100 + '%',
+          animationDuration: (Math.random() * 2 + 2).toFixed(2) + 's'
+        }
+      }));
+    });
+  }
 
   ngOnInit() {
-    // Game store should already be initialized from join page
     if (!this.gameStore.currentPlayer()) {
       this.router.navigate(['/']);
     }
   }
 
   ngOnDestroy() {
-    // Clean up when leaving game
     this.gameStore.destroy();
+    this.animatedCookies = [];
   }
 
   async claimCookie(cookieId: string) {
     await this.gameStore.claimCookie(cookieId);
-  }
-
-  handleExpired(cookieId: string) {
-    // Cookie reached the bottom, it's already filtered out by activeCookies
-    console.log('Cookie expired:', cookieId);
+    // Remove immediately from UI
+    this.animatedCookies = this.animatedCookies.filter(c => c.id !== cookieId);
   }
 
   goBack() {

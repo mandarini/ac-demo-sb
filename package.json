@@ -30,6 +30,7 @@
     "@angular/router": "^20.3.0",
     "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/postcss": "^4.1.13",
+    "emoji-blast": "^0.10.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

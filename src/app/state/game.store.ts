@@ -201,7 +201,6 @@ export class GameStore {
 
     // Subscribe to cookies
     const cookiesSub = this.supabase.subscribeToCookies(this.roomId, (payload) => {
-      console.log('Cookie event received:', payload.eventType, payload);
       if (payload.eventType === 'INSERT') {
         this.cookies.update(cookies => {
           // Check if cookie already exists to avoid duplicates
@@ -254,7 +253,6 @@ export class GameStore {
 
       // Load active cookies
       const cookiesData = await this.supabase.getActiveCookies(this.roomId);
-      console.log('Initial cookies loaded:', cookiesData.length);
       this.cookies.set(cookiesData);
 
       // Load leaderboard
@@ -321,8 +319,6 @@ export class GameStore {
           });
           if (error) {
             console.error('Failed to spawn cookies:', error);
-          } else {
-            console.log('Cookies spawned:', data);
           }
         } catch (err) {
           console.error('Error spawning cookies:', err);
@@ -340,9 +336,6 @@ export class GameStore {
     this.cookies.update(cookies => 
       cookies.filter(cookie => {
         const isExpired = new Date(cookie.despawn_at).getTime() <= now;
-        if (isExpired && !cookie.owner) {
-          console.log('Removing expired cookie:', cookie.id);
-        }
         return !isExpired || cookie.owner; // Keep if not expired or if claimed
       })
     );
