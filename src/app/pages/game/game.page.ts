@@ -1,11 +1,13 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameStore } from '../../state/game.store';
+import { CookieComponent } from '../../ui/cookie.component';
 
 @Component({
   selector: 'app-game',
-  imports: [CommonModule],
+  imports: [CommonModule, CookieComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen relative overflow-hidden">
       <!-- Game Canvas -->
@@ -13,14 +15,11 @@ import { GameStore } from '../../state/game.store';
         <div class="relative w-full h-full" id="game-canvas">
           <!-- Cookies will be rendered here -->
           @for (cookie of gameStore.activeCookies(); track cookie.id) {
-            <div 
-              class="absolute text-4xl cursor-pointer select-none transition-transform hover:scale-110"
-              [style.left.%]="cookie.x_pct"
-              [style.top.px]="getCookiePosition(cookie)"
-              (click)="claimCookie(cookie.id)"
-            >
-              {{ cookie.type === 'cat' ? '🐱' : '🍪' }}
-            </div>
+            <app-cookie
+              [cookie]="cookie"
+              (claim)="claimCookie($event)"
+              (expired)="handleExpired($event)"
+            />
           }
         </div>
       </div>
@@ -79,29 +78,13 @@ export class GamePage implements OnInit, OnDestroy {
     this.gameStore.destroy();
   }
 
-  getCookiePosition(cookie: any): number {
-    const now = Date.now();
-    const spawnTime = new Date(cookie.spawned_at).getTime();
-    const despawnTime = new Date(cookie.despawn_at).getTime();
-    const totalTime = despawnTime - spawnTime;
-    const elapsed = now - spawnTime;
-    const progress = Math.min(elapsed / totalTime, 1);
-    
-    const position = progress * window.innerHeight;
-    // Log first cookie details for debugging
-    if (cookie.id === this.gameStore.activeCookies()[0]?.id) {
-      console.log('Cookie position:', {
-        progress,
-        position,
-        elapsed: elapsed / 1000,
-        totalTime: totalTime / 1000
-      });
-    }
-    return position;
-  }
-
   async claimCookie(cookieId: string) {
     await this.gameStore.claimCookie(cookieId);
+  }
+
+  handleExpired(cookieId: string) {
+    // Cookie reached the bottom, it's already filtered out by activeCookies
+    console.log('Cookie expired:', cookieId);
   }
 
   goBack() {

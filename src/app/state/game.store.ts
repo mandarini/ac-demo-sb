@@ -131,11 +131,14 @@ export class GameStore {
   activeCookies = computed(() => {
     const now = new Date().getTime();
     const allCookies = this.cookies();
-    const active = allCookies.filter(cookie => 
-      !cookie.owner && 
-      new Date(cookie.despawn_at).getTime() > now
-    );
-    console.log('Active cookies:', active.length, 'of', allCookies.length, 'total cookies');
+    const active = allCookies.filter(cookie => {
+      // Cookie is active if:
+      // 1. Not claimed (no owner)
+      // 2. Not expired (despawn time is in the future)
+      const notClaimed = !cookie.owner;
+      const notExpired = new Date(cookie.despawn_at).getTime() > now;
+      return notClaimed && notExpired;
+    });
     return active;
   });
 
@@ -198,9 +201,16 @@ export class GameStore {
 
     // Subscribe to cookies
     const cookiesSub = this.supabase.subscribeToCookies(this.roomId, (payload) => {
-      console.log('Cookie event received:', payload.eventType, payload.new || payload.old);
+      console.log('Cookie event received:', payload.eventType, payload);
       if (payload.eventType === 'INSERT') {
-        this.cookies.update(cookies => [...cookies, payload.new as Cookie]);
+        this.cookies.update(cookies => {
+          // Check if cookie already exists to avoid duplicates
+          const exists = cookies.some(c => c.id === payload.new.id);
+          if (!exists) {
+            return [...cookies, payload.new as Cookie];
+          }
+          return cookies;
+        });
       } else if (payload.eventType === 'UPDATE') {
         this.cookies.update(cookies => 
           cookies.map(cookie => 
@@ -318,7 +328,24 @@ export class GameStore {
           console.error('Error spawning cookies:', err);
         }
       }
+      
+      // Clean up expired cookies from local state
+      this.cleanupExpiredCookies();
     }, 1000); // Spawn every second based on spawn rate
+  }
+
+  // Remove expired cookies from local state
+  private cleanupExpiredCookies(): void {
+    const now = new Date().getTime();
+    this.cookies.update(cookies => 
+      cookies.filter(cookie => {
+        const isExpired = new Date(cookie.despawn_at).getTime() <= now;
+        if (isExpired && !cookie.owner) {
+          console.log('Removing expired cookie:', cookie.id);
+        }
+        return !isExpired || cookie.owner; // Keep if not expired or if claimed
+      })
+    );
   }
 
   // Cleanup
