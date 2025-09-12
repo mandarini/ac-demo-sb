@@ -22,13 +22,15 @@ import { TouchRipple } from '../core/cursor.service';
         [class.release-ripple]="ripple.type === 'release'"
       ></div>
       
-      <!-- User Label -->
-      <div 
-        class="ripple-label"
-        [style.background-color]="ripple.color"
-      >
-        {{ ripple.nick }}
-      </div>
+      <!-- User Label (only show for taps, not drags) -->
+      @if (ripple.type === 'tap') {
+        <div 
+          class="ripple-label"
+          [style.background-color]="ripple.color"
+        >
+          {{ ripple.nick }}
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -39,103 +41,104 @@ import { TouchRipple } from '../core/cursor.service';
     }
     
     .ripple-circle {
-      width: 20px;
-      height: 20px;
-      border: 3px solid;
+      width: 15px;
+      height: 15px;
+      border: 2px solid;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(4px);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(2px);
     }
     
     .ripple-label {
       position: absolute;
-      top: 30px;
+      top: 25px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 4px 8px;
-      border-radius: 6px;
+      padding: 3px 6px;
+      border-radius: 4px;
       color: white;
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 10px;
+      font-weight: 500;
       white-space: nowrap;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      max-width: 100px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      max-width: 80px;
       overflow: hidden;
       text-overflow: ellipsis;
-      animation: labelFadeIn 0.3s ease-out;
+      opacity: 0.9;
+      animation: labelFadeIn 0.4s ease-out;
     }
     
     /* Tap Ripple Animation */
     .tap-ripple {
-      animation: tapRipple 2s ease-out forwards;
+      animation: tapRipple 1.5s ease-out forwards;
     }
     
     @keyframes tapRipple {
       0% {
-        width: 20px;
-        height: 20px;
-        opacity: 1;
+        width: 15px;
+        height: 15px;
+        opacity: 0.6;
         transform: scale(1);
       }
-      50% {
-        width: 60px;
-        height: 60px;
-        opacity: 0.8;
-        transform: scale(1);
-      }
-      100% {
-        width: 80px;
-        height: 80px;
-        opacity: 0;
-        transform: scale(1.2);
-      }
-    }
-    
-    /* Drag Ripple Animation (smaller, persistent) */
-    .drag-ripple {
-      animation: dragRipple 1s ease-out forwards;
-      width: 30px;
-      height: 30px;
-    }
-    
-    @keyframes dragRipple {
-      0% {
-        opacity: 1;
-        transform: scale(0.8);
-      }
-      50% {
-        opacity: 0.9;
+      40% {
+        width: 40px;
+        height: 40px;
+        opacity: 0.4;
         transform: scale(1);
       }
       100% {
+        width: 50px;
+        height: 50px;
         opacity: 0;
         transform: scale(1.1);
       }
     }
     
+    /* Drag Ripple Animation (smaller, subtle) */
+    .drag-ripple {
+      animation: dragRipple 0.8s ease-out forwards;
+      width: 20px;
+      height: 20px;
+    }
+    
+    @keyframes dragRipple {
+      0% {
+        opacity: 0.4;
+        transform: scale(0.9);
+      }
+      50% {
+        opacity: 0.3;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.05);
+      }
+    }
+    
     /* Release Ripple Animation (quick burst) */
     .release-ripple {
-      animation: releaseRipple 1.5s ease-out forwards;
+      animation: releaseRipple 1.2s ease-out forwards;
     }
     
     @keyframes releaseRipple {
       0% {
-        width: 25px;
-        height: 25px;
-        opacity: 1;
+        width: 18px;
+        height: 18px;
+        opacity: 0.5;
         transform: scale(1);
       }
       30% {
-        width: 50px;
-        height: 50px;
-        opacity: 0.9;
+        width: 35px;
+        height: 35px;
+        opacity: 0.3;
         transform: scale(1);
       }
       100% {
-        width: 70px;
-        height: 70px;
+        width: 45px;
+        height: 45px;
         opacity: 0;
-        transform: scale(1.3);
+        transform: scale(1.15);
       }
     }
     

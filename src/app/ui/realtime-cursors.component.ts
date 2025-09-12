@@ -42,6 +42,12 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
   @Input() userColor: string = '#3B82F6'; // Default blue color
   @Input() userId?: string;
 
+  // Touch state tracking to prevent multiple ripples
+  private touchStartTime: number = 0;
+  private touchStartPosition: { x: number; y: number } | null = null;
+  private isDragging: boolean = false;
+  private lastDragRippleTime: number = 0;
+
   constructor(public cursorService: CursorService) {}
 
   ngOnInit() {
@@ -92,7 +98,13 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
       const touch = event.touches[0];
       if (touch) {
         const position = this.cursorService.getRelativeTouchPosition(touch);
-        this.cursorService.sendTouchRipple(position.x, position.y, 'tap');
+        
+        // Record touch start for tap detection
+        this.touchStartTime = Date.now();
+        this.touchStartPosition = position;
+        this.isDragging = false;
+        
+        // Don't create ripple yet - wait to see if it's a tap or drag
       }
     }
   }
@@ -106,9 +118,24 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
       }
       
       const touch = event.touches[0];
-      if (touch) {
+      if (touch && this.touchStartPosition) {
         const position = this.cursorService.getRelativeTouchPosition(touch);
-        this.cursorService.sendTouchRipple(position.x, position.y, 'drag');
+        
+        // Check if we've moved significantly (indicates dragging)
+        const deltaX = Math.abs(position.x - this.touchStartPosition.x);
+        const deltaY = Math.abs(position.y - this.touchStartPosition.y);
+        const hasMovedSignificantly = deltaX > 2 || deltaY > 2; // 2% of screen
+        
+        if (hasMovedSignificantly) {
+          this.isDragging = true;
+          
+          // Throttle drag ripples to avoid spam (max every 100ms)
+          const now = Date.now();
+          if (now - this.lastDragRippleTime > 100) {
+            this.cursorService.sendTouchRipple(position.x, position.y, 'drag');
+            this.lastDragRippleTime = now;
+          }
+        }
       }
     }
   }
@@ -122,9 +149,23 @@ export class RealtimeCursorsComponent implements OnInit, OnDestroy {
       }
       
       const touch = event.changedTouches[0];
-      if (touch) {
+      if (touch && this.touchStartPosition) {
         const position = this.cursorService.getRelativeTouchPosition(touch);
-        this.cursorService.sendTouchRipple(position.x, position.y, 'release');
+        const touchDuration = Date.now() - this.touchStartTime;
+        
+        // Determine if this was a quick tap or a drag
+        if (!this.isDragging && touchDuration < 300) {
+          // Quick tap - create single tap ripple
+          this.cursorService.sendTouchRipple(position.x, position.y, 'tap');
+        } else if (this.isDragging) {
+          // End of drag - create release ripple
+          this.cursorService.sendTouchRipple(position.x, position.y, 'release');
+        }
+        
+        // Reset touch state
+        this.touchStartPosition = null;
+        this.touchStartTime = 0;
+        this.isDragging = false;
       }
     }
   }

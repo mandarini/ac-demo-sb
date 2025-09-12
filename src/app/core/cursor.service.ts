@@ -197,12 +197,15 @@ export class CursorService {
   private handleTouchRipple(rippleData: TouchRipple): void {
     this.touchRipples.update(ripples => [...ripples, rippleData]);
 
-    // Auto-remove ripple after animation duration
+    // Auto-remove ripple after animation duration (based on type)
+    const removeDelay = rippleData.type === 'tap' ? 1500 : 
+                       rippleData.type === 'drag' ? 800 : 1200;
+    
     setTimeout(() => {
       this.touchRipples.update(ripples => 
         ripples.filter(r => r.id !== rippleData.id)
       );
-    }, 2000); // Remove after 2 seconds
+    }, removeDelay);
   }
 
   /**
