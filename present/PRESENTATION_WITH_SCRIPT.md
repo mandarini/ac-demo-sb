@@ -40,17 +40,35 @@
 
 ---
 
-## Slide 6: The Demo
-**Live Cookie Catcher Game**
+## Slide 6: Supabase + AI Tools
+**Model Context Protocol (MCP)**
 
 ### Speaker Script:
-"Let me show you what we're building. This is Cookie Catcher - a real-time multiplayer game where everyone in the room can join on their phones right now. You catch falling cookies and cats, compete on live leaderboards, and see each other's cursors moving in real-time. Go ahead, scan this QR code and join the game!"
-
-*[Show live demo with audience participation]*
+"Now here's something exciting that's brand new - Supabase has launched Model Context Protocol support, which means you can connect your AI tools directly to your Supabase projects. This isn't just about querying data - your AI assistant can help you set up projects, understand your database schema, and even write queries in natural language. It's like having an AI pair programmer that understands your entire backend."
 
 ---
 
-## Slide 7: The Challenge
+## Slide 7: AI Tools in Action
+**Works with Your Favorite Tools**
+
+### Speaker Script:
+"This works with all the AI tools you're already using. In Cursor, you can ask your AI to examine your database structure and suggest optimizations. Claude can help you understand complex queries and relationships. Even Warp terminal gets AI superpowers - you can ask it to generate Supabase CLI commands. Let me show you a quick video of how this looks when setting up a new project with AI assistance."
+
+*[Play video showing AI-assisted project setup]*
+
+---
+
+## Slide 8: AI + No-Code Platforms
+**Perfect for Bolt.new & Loveable**
+
+### Speaker Script:
+"But it gets even better with no-code platforms like Bolt.new and Loveable. These AI-powered platforms can now understand Supabase patterns and generate full-stack applications in minutes. You describe your app idea, and the AI creates the database schema, sets up authentication, builds the UI, and connects everything together. Let me show you how fast we can build a complete app."
+
+*[Play video showing Bolt.new creating a Supabase app]*
+
+---
+
+## Slide 9: The Challenge
 **Building Real-time Multiplayer is Hard**
 
 - Race conditions
@@ -64,7 +82,7 @@
 
 ---
 
-## Slide 8: The Solution
+## Slide 10: The Solution
 **Angular Signals + Supabase Realtime**
 
 ```typescript
@@ -85,7 +103,17 @@ export class GameStore {
 
 ---
 
-## Slide 9: Real-time Database Changes
+## Slide 11: The Demo
+**Live Cookie Catcher Game**
+
+### Speaker Script:
+"Now let me show you what we've built with this approach. This is Cookie Catcher - a real-time multiplayer game that demonstrates everything we just talked about. You catch falling cookies and cats, compete on live leaderboards, and see each other's cursors moving in real-time. I'll show you a preview now, and we'll open it up for everyone to join once we've walked through how it works."
+
+*[Show screenshot/preview of the game - no live link yet]*
+
+---
+
+## Slide 12: Real-time Database Changes
 **Live Data Subscriptions**
 
 ```typescript
@@ -116,7 +144,7 @@ this.supabase.subscribeToScores((payload) => {
 
 ---
 
-## Slide 10: Presence Tracking
+## Slide 13: Presence Tracking
 **Who's Online Right Now**
 
 ```typescript
@@ -145,7 +173,7 @@ export class PresenceService {
 
 ---
 
-## Slide 11: Live Cursor Tracking
+## Slide 14: Live Cursor Tracking
 **See Everyone's Mouse Movements**
 
 ```typescript
@@ -171,7 +199,7 @@ export class CursorService {
 
 ---
 
-## Slide 12: Atomic Operations
+## Slide 15: Atomic Operations
 **Solving Race Conditions**
 
 ```typescript
@@ -203,7 +231,19 @@ export default serve(async (req) => {
 
 ---
 
-## Slide 13: Performance at Scale
+## Slide 16: Let's Play Together!
+**🍪 Cookie Catcher - Live Demo**
+
+### Speaker Script:
+"Now that you understand how it all works technically, let's see it in action! Everyone take out your phones - here's the live demo link. Go to this URL or scan the QR code and join the game right now. You'll see everything we just talked about - the real-time cursors, presence tracking, live leaderboards, and those atomic operations preventing race conditions. Take a couple minutes to play around, and watch how smoothly everything updates across all our devices!"
+
+*[Interactive break - let audience play for 2-3 minutes while you observe and comment on the real-time features]*
+
+"Look at that - we have [X] players online, you can see everyone's cursors moving, the leaderboard updating in real-time. This is exactly what we built with Angular Signals and Supabase Realtime!"
+
+---
+
+## Slide 17: Performance at Scale
 **60fps with 250,000+ Concurrent Users**
 
 ```typescript
@@ -230,7 +270,7 @@ export class GamePage {
 
 ---
 
-## Slide 14: Database Security
+## Slide 18: Database Security
 **Row Level Security Made Simple**
 
 ```sql
@@ -250,7 +290,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE cookies;
 
 ---
 
-## Slide 15: Mobile-First Design
+## Slide 19: Mobile-First Design
 **Cross-Platform Real-time**
 
 ```typescript
@@ -279,7 +319,7 @@ export class CursorService {
 
 ---
 
-## Slide 16: Developer Experience
+## Slide 20: Developer Experience
 **Type-Safe Real-time Development**
 
 ```typescript
@@ -309,7 +349,7 @@ const supabase = createClient<Database>(url, key);
 
 ---
 
-## Slide 17: Architecture Overview
+## Slide 21: Architecture Overview
 **Simple but Powerful**
 
 ```
@@ -326,7 +366,7 @@ const supabase = createClient<Database>(url, key);
 
 ---
 
-## Slide 18: Real-World Results
+## Slide 22: Real-World Results
 **Production-Ready Performance**
 
 - ✅ **250,000+ concurrent users** in benchmarks
@@ -340,7 +380,7 @@ const supabase = createClient<Database>(url, key);
 
 ---
 
-## Slide 19: Key Takeaways
+## Slide 23: Key Takeaways
 **Why Angular + Supabase Works**
 
 1. **Reactive by Default**: Signals + Realtime = Automatic UI updates
@@ -354,7 +394,7 @@ const supabase = createClient<Database>(url, key);
 
 ---
 
-## Slide 20: What You Can Build
+## Slide 24: What You Can Build
 **Beyond Games**
 
 - 🎮 **Multiplayer Games** - Real-time gameplay
@@ -369,7 +409,7 @@ const supabase = createClient<Database>(url, key);
 
 ---
 
-## Slide 21: Getting Started
+## Slide 25: Getting Started
 **Try It Yourself**
 
 ```bash
@@ -399,7 +439,7 @@ ng serve
 
 ---
 
-## Slide 22: Thank You
+## Slide 26: Thank You
 **Questions?**
 
 **Connect with me:**
@@ -408,17 +448,20 @@ ng serve
 - 💼 **GitHub**: [github.com/mandarini](https://github.com/mandarini)
 
 ### Speaker Script:
-"That's how we build real-time multiplayer experiences with Angular and Supabase. The combination of reactive signals and real-time infrastructure makes complex multiplayer features surprisingly simple to implement. Thank you for your attention - I'd love to answer any questions you have!"
+"That's how we build real-time multiplayer experiences with Angular and Supabase. The combination of reactive signals and real-time infrastructure makes complex multiplayer features surprisingly simple to implement. I hope you enjoyed playing with the live demo earlier - you experienced firsthand how smooth and responsive real-time multiplayer can be when built with the right tools. Thank you for your attention - I'd love to answer any questions you have!"
 
 ---
 
 ## 🎯 Presentation Tips
 
-### Timing (20 minutes total):
-- **Slides 1-6**: Intro, Supabase Overview & Demo (6 minutes)
-- **Slides 7-12**: Problem, Solution & Core Features (8 minutes)  
-- **Slides 13-18**: Technical Deep Dive (4 minutes)
-- **Slides 19-22**: Wrap-up & Q&A (2 minutes)
+### Timing (24 minutes total):
+- **Slides 1-5**: Intro & Supabase Overview (4 minutes)
+- **Slides 6-8**: AI Tools Integration (3 minutes)
+- **Slides 9-11**: Problem, Solution & Demo Preview (3 minutes)  
+- **Slides 12-15**: Core Technical Features (6 minutes)
+- **Slide 16**: **Live Demo Break** (3 minutes - audience plays)
+- **Slides 17-22**: Performance, Security & Architecture (4 minutes)
+- **Slides 23-26**: Wrap-up & Q&A (1 minute)
 
 ### Interactive Elements:
 - **Live Demo**: Have audience join the game on their phones

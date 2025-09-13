@@ -41,20 +41,35 @@
 
 ---
 
-## Slide 6: The Demo
-# Let's Play Together!
-## 🍪 Cookie Catcher Game
-
-**https://ngdemo-sb.netlify.app**
-
-**Rules:**
-- Catch cookies 🍪 = 1 point
-- Catch cats 🐱 = 3 points
-- Compete on live leaderboard!
+## Slide 6: Supabase + AI Tools
+# Model Context Protocol (MCP)
+- **🤖 AI Integration** - Connect Supabase to AI tools
+- **🔧 Setup & Management** - AI helps configure projects
+- **📊 Query & Analyze** - Natural language database queries
 
 ---
 
-## Slide 7: The Challenge
+## Slide 7: AI Tools in Action
+# Works with Your Favorite Tools
+- **Cursor** - AI pair programming with database context
+- **Claude** - Chat with your database schema
+- **Warp** - Terminal AI with Supabase commands
+
+*[Video Demo: Setting up project with AI assistance]*
+
+---
+
+## Slide 8: AI + No-Code Platforms
+# Perfect for Bolt.new & Loveable
+- **🚀 Rapid Prototyping** - From idea to app in minutes
+- **🔗 Seamless Integration** - AI understands Supabase patterns
+- **📱 Full-Stack Apps** - Database, auth, and UI generated together
+
+*[Video Demo: Building with Bolt.new]*
+
+---
+
+## Slide 9: The Challenge
 # Building Real-time Multiplayer is Hard
 - Race conditions
 - State synchronization  
@@ -62,7 +77,7 @@
 
 ---
 
-## Slide 8: The Solution
+## Slide 10: The Solution
 # Angular Signals + Supabase Realtime
 - Reactive state management
 - Real-time infrastructure
@@ -70,7 +85,22 @@
 
 ---
 
-## Slide 9: Real-time Database Changes
+## Slide 11: The Demo
+# Let's Play Together!
+## 🍪 Cookie Catcher Game
+
+*[Show screenshot/preview of the game]*
+
+**Rules:**
+- Catch cookies 🍪 = 1 point
+- Catch cats 🐱 = 3 points
+- Compete on live leaderboard!
+
+*Note: Live link will be shared later*
+
+---
+
+## Slide 12: Real-time Database Changes
 # Live Data Subscriptions
 - PostgreSQL change streams
 - WebSocket delivery
@@ -78,7 +108,7 @@
 
 ---
 
-## Slide 10: Presence Tracking
+## Slide 13: Presence Tracking
 # Who's Online Right Now
 - Real-time user count
 - Join/leave notifications
@@ -86,7 +116,7 @@
 
 ---
 
-## Slide 11: Live Cursor Tracking
+## Slide 14: Live Cursor Tracking
 # See Everyone's Interactions
 - Desktop: Mouse cursors
 - Mobile: Touch ripples
@@ -94,7 +124,7 @@
 
 ---
 
-## Slide 12: Atomic Operations
+## Slide 15: Atomic Operations
 # Solving Race Conditions
 - Edge Functions for security
 - Database-level atomicity
@@ -102,7 +132,20 @@
 
 ---
 
-## Slide 13: Performance at Scale
+## Slide 16: Let's Play Together!
+# 🍪 Cookie Catcher - Live Demo
+## **https://ngdemo-sb.netlify.app**
+
+**Everyone join now!**
+- Scan QR code or visit the URL
+- Watch the real-time magic happen
+- See cursors, presence, and live updates
+
+*[Interactive break - let audience play for 2-3 minutes]*
+
+---
+
+## Slide 17: Performance at Scale
 # 60fps with 250,000+ Users
 - OnPush change detection
 - Computed signals
@@ -110,7 +153,7 @@
 
 ---
 
-## Slide 14: Database Security
+## Slide 18: Database Security
 # Row Level Security Made Simple
 - Enable RLS policies
 - Realtime subscriptions
@@ -118,7 +161,7 @@
 
 ---
 
-## Slide 15: Cross-Platform Magic
+## Slide 19: Cross-Platform Magic
 # Mobile-First Design
 - Device detection
 - Adaptive interactions
@@ -126,7 +169,7 @@
 
 ---
 
-## Slide 16: Developer Experience
+## Slide 20: Developer Experience
 # Type-Safe Real-time Development
 - Generated TypeScript types
 - Full IDE support
@@ -134,7 +177,7 @@
 
 ---
 
-## Slide 17: Architecture
+## Slide 21: Architecture
 # Simple but Powerful
 - Angular: Reactive UI
 - Supabase: Real-time backend
@@ -142,7 +185,7 @@
 
 ---
 
-## Slide 18: Real-World Results
+## Slide 22: Real-World Results
 # Production-Ready Performance
 - ✅ 250,000+ concurrent users
 - ✅ Sub-50ms latency
@@ -151,7 +194,7 @@
 
 ---
 
-## Slide 19: Key Takeaways
+## Slide 23: Key Takeaways
 # Why Angular + Supabase Works
 - Reactive by default
 - Type-safe across the stack
@@ -159,7 +202,7 @@
 
 ---
 
-## Slide 20: What You Can Build
+## Slide 24: What You Can Build
 # Beyond Games
 - 💬 Chat applications
 - 📊 Collaborative dashboards
@@ -168,7 +211,7 @@
 
 ---
 
-## Slide 21: Thank You!
+## Slide 25: Thank You!
 # Questions?
 
 **🎮 Demo:** https://ngdemo-sb.netlify.app
