@@ -7,7 +7,7 @@ A real-time multiplayer cookie-catching game built with Angular and Supabase for
 - **Real-time Multiplayer**: Unlimited concurrent players in a single shared room
 - **Simple Gameplay**: Tap falling emojis to claim them before they disappear
 - **Two Collectibles**: Cookies (🍪) worth 1 point, Cats (🐱) worth 3 points (15% spawn rate)
-- **Dual Leaderboards**: "This Round" and "All-time" scoring with live updates
+- **Dual Leaderboards**: "This Round" and "All-time" scoring with live updatasdfasdfes
 - **Anonymous Play**: Auto-assigned nicknames from a curated pool of 100+ fun names
 - **Real-time Cursors**: See other players' mouse movements and interactions
 - **Admin Controls**: Game master panel for starting/stopping rounds and managing gameplay
