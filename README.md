@@ -11,8 +11,7 @@ A real-time multiplayer cookie-catching game built with Angular and Supabase for
 - **Anonymous Play**: Auto-assigned nicknames from a curated pool of 100+ fun names
 - **Real-time Cursors**: See other players' mouse movements and interactions
 - **Admin Controls**: Game master panel for starting/stopping rounds and managing gameplay
-
-## 🚀 Quick Start
+sadfasdfasdfa## 🚀 Quick Start
 
 ### Prerequisites
 
