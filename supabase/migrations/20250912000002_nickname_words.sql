@@ -2,35 +2,37 @@
   Cookie Catcher - Nickname Word Components
 
   30 words per position = 30 x 30 x 30 = 27,000 unique combinations
-  Format: Word1 + Word2 + Word3 = "SwiftCookieMaster"
+  Format: Word1 + Word2 + Word3 = "HappyCookieFriend"
+
+  Theme: Friendly, food, fruits, flowers
 */
 
--- Position 1: Adjectives (30 words)
+-- Position 1: Friendly Adjectives (30 words)
 INSERT INTO nickname_words (word, position) VALUES
-  ('Swift', 1), ('Cosmic', 1), ('Turbo', 1), ('Mighty', 1), ('Epic', 1),
-  ('Brave', 1), ('Clever', 1), ('Fierce', 1), ('Silent', 1), ('Rapid', 1),
-  ('Stellar', 1), ('Bold', 1), ('Quantum', 1), ('Cyber', 1), ('Hyper', 1),
-  ('Ultra', 1), ('Super', 1), ('Mega', 1), ('Blazing', 1), ('Frozen', 1),
-  ('Shadow', 1), ('Golden', 1), ('Silver', 1), ('Crystal', 1), ('Thunder', 1),
-  ('Lightning', 1), ('Mystic', 1), ('Phantom', 1), ('Nova', 1), ('Arctic', 1)
+  ('Happy', 1), ('Sunny', 1), ('Sweet', 1), ('Lovely', 1), ('Cozy', 1),
+  ('Fluffy', 1), ('Sparkly', 1), ('Cuddly', 1), ('Giggly', 1), ('Bubbly', 1),
+  ('Cheerful', 1), ('Jolly', 1), ('Merry', 1), ('Gentle', 1), ('Soft', 1),
+  ('Warm', 1), ('Bright', 1), ('Peachy', 1), ('Rosy', 1), ('Breezy', 1),
+  ('Dreamy', 1), ('Snuggly', 1), ('Fancy', 1), ('Lucky', 1), ('Zippy', 1),
+  ('Bouncy', 1), ('Twinkly', 1), ('Perky', 1), ('Chirpy', 1), ('Dainty', 1)
 ON CONFLICT (word) DO NOTHING;
 
--- Position 2: Nouns (30 words)
+-- Position 2: Foods, Fruits & Flowers (30 words)
 INSERT INTO nickname_words (word, position) VALUES
-  ('Cookie', 2), ('Pixel', 2), ('Code', 2), ('Cloud', 2), ('Star', 2),
-  ('Byte', 2), ('Data', 2), ('Node', 2), ('Wave', 2), ('Storm', 2),
-  ('Dragon', 2), ('Phoenix', 2), ('Tiger', 2), ('Wolf', 2), ('Eagle', 2),
-  ('Falcon', 2), ('Ninja', 2), ('Samurai', 2), ('Knight', 2), ('Spark', 2),
-  ('Comet', 2), ('Nebula', 2), ('Orbit', 2), ('Pulse', 2), ('Beam', 2),
-  ('Flash', 2), ('Blaze', 2), ('Frost', 2), ('Vortex', 2), ('Rift', 2)
+  ('Cookie', 2), ('Muffin', 2), ('Cupcake', 2), ('Waffle', 2), ('Pancake', 2),
+  ('Donut', 2), ('Brownie', 2), ('Pudding', 2), ('Truffle', 2), ('Biscuit', 2),
+  ('Cherry', 2), ('Peach', 2), ('Mango', 2), ('Berry', 2), ('Apple', 2),
+  ('Lemon', 2), ('Melon', 2), ('Plum', 2), ('Fig', 2), ('Kiwi', 2),
+  ('Rose', 2), ('Daisy', 2), ('Tulip', 2), ('Lily', 2), ('Poppy', 2),
+  ('Violet', 2), ('Jasmine', 2), ('Clover', 2), ('Petal', 2), ('Maple', 2)
 ON CONFLICT (word) DO NOTHING;
 
--- Position 3: Titles (30 words)
+-- Position 3: Friendly Endings (30 words)
 INSERT INTO nickname_words (word, position) VALUES
-  ('Master', 3), ('Ninja', 3), ('Ranger', 3), ('Hunter', 3), ('Pro', 3),
-  ('Hero', 3), ('Legend', 3), ('Wizard', 3), ('Sage', 3), ('Chief', 3),
-  ('King', 3), ('Queen', 3), ('Lord', 3), ('Boss', 3), ('Ace', 3),
-  ('Champion', 3), ('Guardian', 3), ('Warrior', 3), ('Seeker', 3), ('Slayer', 3),
-  ('Rider', 3), ('Runner', 3), ('Crusher', 3), ('Catcher', 3), ('Breaker', 3),
-  ('Maker', 3), ('Walker', 3), ('Jumper', 3), ('Dasher', 3), ('Striker', 3)
+  ('Friend', 3), ('Buddy', 3), ('Pal', 3), ('Star', 3), ('Angel', 3),
+  ('Charm', 3), ('Delight', 3), ('Wonder', 3), ('Joy', 3), ('Sparkle', 3),
+  ('Treasure', 3), ('Darling', 3), ('Sweetie', 3), ('Blossom', 3), ('Sprout', 3),
+  ('Puff', 3), ('Fluff', 3), ('Pop', 3), ('Twirl', 3), ('Swirl', 3),
+  ('Doodle', 3), ('Wiggle', 3), ('Giggle', 3), ('Snuggle', 3), ('Cuddle', 3),
+  ('Bubble', 3), ('Sprinkle', 3), ('Dash', 3), ('Pip', 3), ('Dot', 3)
 ON CONFLICT (word) DO NOTHING;
