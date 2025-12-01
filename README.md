@@ -76,11 +76,11 @@ The game generates a random identifier (like `device_abc123`) stored in both you
 ### Backend (Supabase)
 - **PostgreSQL**: Game state, players, scores, and configuration
 - **Edge Functions (Deno)**: Secure server-side operations
-  - `assign_nickname`: Device-based nickname reservation
+  - `assign_nickname`: Device-based nickname reservation (rate limited)
   - `claim_cookie`: Atomic cookie claiming with rate limiting
-  - `spawn_cookies`: Automated cookie generation
-  - `admin_actions`: Game control operations
+  - `admin_actions`: Game control operations (password protected)
   - `admin-auth`: Admin authentication
+- **pg_cron**: Server-side cookie spawning (prevents client abuse)
 - **Realtime**: Live updates for cookies, scores, and presence
 - **RLS Policies**: Public read access, function-only writes
 
@@ -92,7 +92,8 @@ rooms (
   id: 'main-room',
   status: 'idle' | 'running' | 'intermission',
   spawn_rate_per_sec: 2.0,
-  ttl_seconds: 8
+  ttl_seconds: 8,
+  max_players: 1000
 )
 
 -- Word components for combinatorial nicknames (27,000 combinations)
@@ -123,6 +124,14 @@ scores (
   score_total: cumulative all-time score,
   score_round: current round score,
   last_claim_at: for rate limiting
+)
+
+-- Rate limiting (prevents abuse)
+rate_limits (
+  ip_address: client IP,
+  action: function name,
+  request_count: requests in window,
+  window_start: timestamp
 )
 ```
 
@@ -194,12 +203,13 @@ src/app/
 
 supabase/
 ├── migrations/             # Database schema evolution
-│   └── *.sql              # Table definitions, indexes, RLS policies
+│   ├── *_schema.sql       # Table definitions, indexes, RLS policies
+│   ├── *_pg_cron_spawner.sql  # Server-side cookie spawning
+│   └── *_rate_limits.sql  # Rate limiting for abuse prevention
 └── functions/             # Edge Functions (Deno)
-    ├── assign_nickname/   # Player registration
+    ├── assign_nickname/   # Player registration (rate limited)
     ├── claim_cookie/      # Score atomic updates
-    ├── spawn_cookies/     # Cookie generation
-    ├── admin_actions/     # Game control
+    ├── admin_actions/     # Game control (password protected)
     └── admin-auth/        # Admin authentication
 ```
 

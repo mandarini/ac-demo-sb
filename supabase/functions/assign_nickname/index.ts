@@ -29,6 +29,11 @@ serve(async (req) => {
       throw new Error('Device ID is required')
     }
 
+    // Get client IP for rate limiting
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || 'unknown'
+
     // Check if device already has a player record
     const { data: existingPlayer } = await supabaseClient
       .from('players')
@@ -55,6 +60,50 @@ serve(async (req) => {
           last_seen_at: new Date().toISOString()
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Rate limit new player creation (10 new players per IP per minute)
+    const { data: rateLimitOk, error: rateLimitError } = await supabaseClient
+      .rpc('check_rate_limit', {
+        p_ip_address: clientIp,
+        p_action: 'assign_nickname',
+        p_max_requests: 10,
+        p_window_seconds: 60
+      })
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError)
+      // Continue anyway if rate limit check fails
+    } else if (!rateLimitOk) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limited. Please try again later.' }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Check max players per room
+    const { count: playerCount } = await supabaseClient
+      .from('players')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId)
+
+    const { data: roomData } = await supabaseClient
+      .from('rooms')
+      .select('max_players')
+      .eq('id', roomId)
+      .single()
+
+    if (roomData?.max_players && playerCount && playerCount >= roomData.max_players) {
+      return new Response(
+        JSON.stringify({ error: 'Room is full. Please try again later.' }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       )
     }
 

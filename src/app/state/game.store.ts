@@ -143,15 +143,15 @@ export class GameStore {
   });
 
   private subscriptions: any[] = [];
-  private spawnTimer: any = null;
+  private cleanupTimer: any = null;
 
   constructor(
     private supabase: SupabaseService,
     private deviceService: DeviceService,
     public presence: PresenceService
   ) {
-    // Start cookie spawning timer
-    this.startSpawnTimer();
+    // Start cleanup timer for expired cookies (spawning is handled server-side by pg_cron)
+    this.startCleanupTimer();
   }
 
   // Initialize player and join game
@@ -383,28 +383,12 @@ export class GameStore {
   }
 
 
-  // Timer for spawning cookies
-  private startSpawnTimer(): void {
-    this.spawnTimer = setInterval(async () => {
-      const room = this.room();
-      // Only spawn cookies if game is running
-      if (room?.status === 'running') {
-        try {
-          // Call the spawn_cookies Edge Function
-          const { data, error } = await this.supabase.client.functions.invoke('spawn_cookies', {
-            body: {}
-          });
-          if (error) {
-            console.error('Failed to spawn cookies:', error);
-          }
-        } catch (err) {
-          console.error('Error spawning cookies:', err);
-        }
-      }
-      
-      // Clean up expired cookies from local state
+  // Timer for cleaning up expired cookies from local state
+  // Note: Cookie spawning is handled server-side by pg_cron for security
+  private startCleanupTimer(): void {
+    this.cleanupTimer = setInterval(() => {
       this.cleanupExpiredCookies();
-    }, 1000); // Spawn every second based on spawn rate
+    }, 1000);
   }
 
   // Remove expired cookies from local state
@@ -431,10 +415,10 @@ export class GameStore {
   destroy(): void {
     this.cleanupSubscriptions();
     this.presence.leavePresence();
-    
-    if (this.spawnTimer) {
-      clearInterval(this.spawnTimer);
-      this.spawnTimer = null;
+
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
     }
   }
 }
