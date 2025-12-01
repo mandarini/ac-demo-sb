@@ -223,11 +223,14 @@ export class AdminPage implements OnInit {
   }
 
   async adminAction(action: string, params: any = {}) {
+    console.log('adminAction called:', action, params);
     this.loading.set(true);
     this.status.set(null);
 
     try {
+      console.log('Calling supabase.adminAction...');
       const result = await this.supabase.adminAction(action, params);
+      console.log('adminAction result:', result);
       this.status.set(JSON.stringify(result, null, 2));
     } catch (err) {
       console.error('Admin action failed:', err);

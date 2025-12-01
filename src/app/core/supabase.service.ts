@@ -117,17 +117,21 @@ export class SupabaseService {
 
   // Admin functions (uses JWT auth from session)
   async adminAction(action: string, params: any = {}) {
+    console.log('supabase.adminAction called:', action, params);
     const session = await this.getSession();
+    console.log('Session:', session ? 'exists' : 'null');
     if (!session) {
       throw new Error('Not authenticated');
     }
 
+    console.log('Invoking admin_actions function...');
     const { data, error } = await this.supabase.functions.invoke('admin_actions', {
       body: { action, ...params },
       headers: {
         Authorization: `Bearer ${session.access_token}`
       }
     });
+    console.log('Function invoke result:', { data, error });
     if (error) throw error;
     return data;
   }

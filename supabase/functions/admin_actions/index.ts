@@ -137,6 +137,9 @@ async function startRound(supabaseClient: any, roomId: string) {
       .eq('room_id', roomId)
   }
 
+  // Spawn initial batch of cookies immediately (don't wait for pg_cron)
+  await supabaseClient.rpc('spawn_cookies_batch')
+
   return new Response(
     JSON.stringify({ success: true, message: 'Game started!', round: newRoundNo }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
