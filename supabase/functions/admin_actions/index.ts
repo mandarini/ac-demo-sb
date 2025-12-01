@@ -17,8 +17,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { action, ...params } = await req.json()
+    const { action, password, ...params } = await req.json()
     const roomId = 'main-room'
+
+    // Verify admin password
+    const adminPassword = Deno.env.get('ADMIN_PASSWORD')
+    if (!adminPassword || password !== adminPassword) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
     switch (action) {
       case 'start_round':
