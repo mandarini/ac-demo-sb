@@ -81,12 +81,11 @@ ALTER TABLE cookies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Allow all operations for realtime (actual writes still restricted to service role)
-CREATE POLICY "Allow realtime access on rooms" ON rooms FOR ALL TO anon, authenticated USING (true);
-CREATE POLICY "Allow realtime access on cookies" ON cookies FOR ALL TO anon, authenticated USING (true);
-CREATE POLICY "Allow realtime access on scores" ON scores FOR ALL TO anon, authenticated USING (true);
-CREATE POLICY "Allow realtime access on players" ON players FOR ALL TO anon, authenticated USING (true);
--- Nickname words only need read access
+-- Read-only access for clients (writes go through Edge Functions with service role)
+CREATE POLICY "Allow read access on rooms" ON rooms FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Allow read access on cookies" ON cookies FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Allow read access on scores" ON scores FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Allow read access on players" ON players FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "Allow read access on nickname_words" ON nickname_words FOR SELECT TO anon, authenticated USING (true);
 
 -- Performance indexes
