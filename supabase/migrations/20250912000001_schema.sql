@@ -88,6 +88,12 @@ CREATE POLICY "Allow read access on scores" ON scores FOR SELECT TO anon, authen
 CREATE POLICY "Allow read access on players" ON players FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "Allow read access on nickname_words" ON nickname_words FOR SELECT TO anon, authenticated USING (true);
 
+-- Enable Realtime for game tables
+ALTER PUBLICATION supabase_realtime ADD TABLE rooms;
+ALTER PUBLICATION supabase_realtime ADD TABLE players;
+ALTER PUBLICATION supabase_realtime ADD TABLE cookies;
+ALTER PUBLICATION supabase_realtime ADD TABLE scores;
+
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_players_device_room ON players(device_id, room_id);
 CREATE INDEX IF NOT EXISTS idx_players_nick ON players(nick);
