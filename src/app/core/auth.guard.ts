@@ -6,8 +6,8 @@ export const adminGuard: CanActivateFn = async () => {
   const supabase = inject(SupabaseService);
   const router = inject(Router);
 
-  // Wait for session to be checked
-  const session = await supabase.getSession();
+  // Wait for session and admin status to be checked
+  const session = await supabase.getSessionWithAdminCheck();
 
   if (!session) {
     // Not authenticated - allow access to show login UI

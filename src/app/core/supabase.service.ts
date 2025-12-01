@@ -84,6 +84,15 @@ export class SupabaseService {
     return session;
   }
 
+  // Get session and ensure admin status is checked (for guards)
+  async getSessionWithAdminCheck() {
+    const session = await this.getSession();
+    if (session?.user?.email) {
+      await this.checkAdminStatus(session.user.email);
+    }
+    return session;
+  }
+
   get client(): SupabaseClient<Database> {
     return this.supabase;
   }
