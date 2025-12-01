@@ -1,0 +1,29 @@
+# Netlify configuration
+
+[build]
+  publish = "dist/ac-demo-sb/browser"
+  command = "npm run build"
+
+# SPA routing - redirect all routes to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Cache headers for JS files - always revalidate to avoid stale chunks after deployment
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Cache headers for CSS files - always revalidate
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Long-term cache for assets (images, fonts) - these have hashed names
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
