@@ -123,9 +123,9 @@ export class GamePage implements OnInit, OnDestroy {
         if (newCookies.length > 0) {
           newCookies.forEach(c => {
             this.processedCookieIds.add(c.id);
-            
+
             // Calculate real-time Y position based on elapsed time
-            const spawnTime = new Date(c.spawned_at).getTime();
+            const spawnTime = new Date(c.spawned_at ?? c.despawn_at).getTime();
             const despawnTime = new Date(c.despawn_at).getTime();
             const now = Date.now();
             const totalFallTime = (despawnTime - spawnTime) / 1000; // Total time to fall in seconds
@@ -211,7 +211,7 @@ export class GamePage implements OnInit, OnDestroy {
       // Find the corresponding active cookie to get spawn/despawn times
       const activeCookie = this.gameStore.activeCookies().find(c => c.id === cookie.id);
       if (activeCookie) {
-        const spawnTime = new Date(activeCookie.spawned_at).getTime();
+        const spawnTime = new Date(activeCookie.spawned_at ?? activeCookie.despawn_at).getTime();
         const despawnTime = new Date(activeCookie.despawn_at).getTime();
         const totalFallTime = (despawnTime - spawnTime) / 1000;
         const elapsedTime = (now - spawnTime) / 1000;

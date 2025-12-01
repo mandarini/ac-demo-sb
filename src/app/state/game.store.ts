@@ -2,40 +2,11 @@ import { Injectable, signal, computed, effect } from '@angular/core';
 import { SupabaseService } from '../core/supabase.service';
 import { DeviceService } from '../core/device.service';
 import { PresenceService } from '../core/presence.service';
+import { Database } from '../types/database.types';
 
-export interface Room {
-  id: string;
-  name: string;
-  status: 'idle' | 'running' | 'intermission';
-  round_no: number;
-  round_started_at: string | null;
-  round_ends_at: string | null;
-  spawn_rate_per_sec: number;
-  ttl_seconds: number;
-}
-
-export interface Cookie {
-  id: string;
-  room_id: string;
-  type: 'cookie' | 'cat';
-  value: number;
-  x_pct: number;
-  y_pct: number;
-  spawned_at: string;
-  despawn_at: string;
-  owner: string | null;
-  claimed_at: string | null;
-}
-
-export interface Player {
-  id: string;
-  room_id: string;
-  nick: string;
-  color: string | null;
-  device_id: string;
-  joined_at: string;
-  last_seen_at: string;
-}
+export type Room = Database['public']['Tables']['rooms']['Row'];
+export type Cookie = Database['public']['Tables']['cookies']['Row'];
+export type Player = Database['public']['Tables']['players']['Row'];
 
 export interface Score {
   player_id: string;
