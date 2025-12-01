@@ -43,7 +43,8 @@ A real-time multiplayer cookie-catching game built with Angular and Supabase for
    - Game: `http://localhost:4200`
    - Admin: `http://localhost:4200/admin`
    - Leaderboard: `http://localhost:4200/leaderboard`
-   - **Live Demo**: `https://ngdemo-sb.netlify.app`
+
+5. **Live Demo**: https://ngdemo-sb.netlify.app
 
 ## 📱 How It Works
 
@@ -94,11 +95,10 @@ rooms (
   ttl_seconds: 8
 )
 
--- Player nickname pool (100+ pre-loaded)
-nickname_pool (
-  nick: 'CookieMonster', 'SwiftCatcher', etc.
-  is_reserved: boolean,
-  reserved_by_device_id: uuid
+-- Word components for combinatorial nicknames (27,000 combinations)
+nickname_words (
+  word: text,
+  position: 1 | 2 | 3
 )
 
 -- Active players
@@ -171,10 +171,11 @@ Access `/admin` with admin passcode authentication.
 ```
 src/app/
 ├── core/                    # Services
-│   ├── supabase.service.ts  # Database client & Edge Functions
-│   ├── device.service.ts    # Persistent device ID generation
-│   ├── presence.service.ts  # Real-time presence tracking
-│   └── cursor.service.ts    # Multiplayer cursor tracking
+│   ├── supabase.service.ts       # Database client & Edge Functions
+│   ├── device.service.ts         # Persistent device ID generation
+│   ├── presence.service.ts       # Real-time presence tracking
+│   ├── cursor.service.ts         # Multiplayer cursor tracking
+│   └── join-notification.service.ts  # Player join notifications
 ├── state/
 │   └── game.store.ts        # Central game state with signals
 ├── pages/
@@ -183,9 +184,13 @@ src/app/
 │   ├── admin/              # Admin control panel
 │   └── leaderboard/        # Standalone leaderboard view
 └── ui/                     # Reusable components
-    ├── realtime-cursors.component.ts
+    ├── cookie.component.ts
+    ├── cursor.component.ts
+    ├── footer.component.ts
     ├── join-notification.component.ts
-    └── footer.component.ts
+    ├── join-notifications-container.component.ts
+    ├── realtime-cursors.component.ts
+    └── touch-ripple.component.ts
 
 supabase/
 ├── migrations/             # Database schema evolution
@@ -233,7 +238,7 @@ supabase/
 ### Visual Customization
 - **Emojis**: Update cookie types in spawn functions
 - **Colors**: Modify player color palette in `assign_nickname`
-- **Nicknames**: Add more names to `nickname_pool` table
+- **Nicknames**: Add more words to `nickname_words` table
 - **Styling**: Customize Tailwind classes throughout components
 
 ## 📊 Conference Demo Tips
