@@ -21,7 +21,17 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
       }
       
       <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-white mb-8">Admin Panel</h1>
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-3xl font-bold text-white">Admin Panel</h1>
+          @if (authenticated()) {
+            <button
+              (click)="logout()"
+              class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              🚪 Logout
+            </button>
+          }
+        </div>
 
         @if (!authenticated()) {
           <!-- Passcode Form -->
@@ -231,5 +241,13 @@ export class AdminPage implements OnInit {
 
   goBack() {
     this.router.navigate(['/game']);
+  }
+
+  logout() {
+    this.authenticated.set(false);
+    sessionStorage.removeItem('admin_authenticated');
+    this.supabase.clearAdminSession();
+    this.status.set(null);
+    this.error.set(null);
   }
 }
