@@ -1,13 +1,13 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, effect, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { GameStore } from '../../state/game.store';
 import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
 import { JoinNotificationsContainerComponent } from '../../ui/join-notifications-container.component';
 
 @Component({
   selector: 'app-game',
-  imports: [CommonModule, RealtimeCursorsComponent, JoinNotificationsContainerComponent],
+  imports: [CommonModule, RouterLink, RealtimeCursorsComponent, JoinNotificationsContainerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen relative overflow-hidden">
@@ -49,7 +49,7 @@ import { JoinNotificationsContainerComponent } from '../../ui/join-notifications
             <p class="text-gray-300 text-sm">Catch the cookies!</p>
           } @else if (gameStore.isGameOver()) {
             <p class="text-red-400 text-xl font-bold">🏁 GAME OVER</p>
-            <p class="text-gray-300 text-sm">Check the leaderboard!</p>
+            <a routerLink="/leaderboard" class="text-blue-400 hover:text-blue-300 text-sm underline pointer-events-auto">Check the leaderboard!</a>
           } @else {
             <p class="text-gray-400">Waiting to start...</p>
           }
