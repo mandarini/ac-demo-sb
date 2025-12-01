@@ -8,6 +8,7 @@ import { environment } from '../../environments/environment';
 })
 export class SupabaseService {
   private supabase: SupabaseClient<Database>;
+  private adminPassword: string | null = null;
 
   constructor() {
     this.supabase = createClient<Database>(
@@ -44,13 +45,21 @@ export class SupabaseService {
       body: { password }
     });
     if (error) throw error;
+    if (data?.authenticated) {
+      this.adminPassword = password; // Store for subsequent calls
+    }
     return data;
+  }
+
+  // Clear admin session
+  clearAdminSession() {
+    this.adminPassword = null;
   }
 
   // Admin functions
   async adminAction(action: string, params: any = {}) {
     const { data, error } = await this.supabase.functions.invoke('admin_actions', {
-      body: { action, ...params }
+      body: { action, password: this.adminPassword, ...params }
     });
     if (error) throw error;
     return data;
