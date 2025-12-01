@@ -6,17 +6,14 @@ import { TouchRippleComponent } from './touch-ripple.component';
 
 @Component({
   selector: 'app-realtime-cursors',
-  standalone: true,
   imports: [CommonModule, CursorComponent, TouchRippleComponent],
   template: `
     <div class="cursors-overlay">
-      <!-- Desktop Cursors -->
-      @if (!cursorService.isMobileDevice()) {
-        @for (cursor of cursorService.cursors(); track cursor.userId) {
-          <app-cursor [cursor]="cursor" />
-        }
+      <!-- Desktop Cursors (visible to all users) -->
+      @for (cursor of cursorService.cursors(); track cursor.userId) {
+        <app-cursor [cursor]="cursor" />
       }
-      
+
       <!-- Mobile Touch Ripples -->
       @for (ripple of cursorService.touchRipples(); track ripple.id) {
         <app-touch-ripple [ripple]="ripple" />

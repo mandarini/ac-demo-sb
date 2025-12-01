@@ -249,10 +249,10 @@ export class CursorService {
 
   /**
    * Detect if this is a mobile device
+   * Only use user agent - window size and touch support are unreliable
+   * (small browser windows and touch-enabled laptops would be misdetected)
    */
   private detectMobileDevice(): boolean {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      || window.innerWidth <= 768
-      || 'ontouchstart' in window;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 }
