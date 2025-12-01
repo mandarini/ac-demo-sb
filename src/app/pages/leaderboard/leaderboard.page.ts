@@ -198,14 +198,8 @@ import { GameStore } from '../../state/game.store';
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            (click)="goToGame()"
-            class="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-8 rounded-xl hover:from-green-600 hover:to-emerald-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
-          >
-            🎮 Play Game
-          </button>
+        <!-- Action Button -->
+        <div class="mt-8 flex justify-center">
           <button
             (click)="goToJoin()"
             class="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-8 rounded-xl hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
@@ -243,10 +237,6 @@ export class LeaderboardPage implements OnInit, OnDestroy {
 
   goBack() {
     window.history.back();
-  }
-
-  goToGame() {
-    this.router.navigate(['/game']);
   }
 
   goToJoin() {
