@@ -66,56 +66,70 @@ export class SupabaseService {
   }
 
   // Realtime subscriptions
-  subscribeToRoom(roomId: string, callback: (payload: any) => void): RealtimeChannel {
+  subscribeToRoom(roomId: string, callback: (payload: any) => void): Promise<RealtimeChannel> {
     console.log('🔔 Setting up room subscription for:', roomId);
-    const channel = this.supabase
-      .channel(`room_${roomId}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public',
-        table: 'rooms',
-        filter: `id=eq.${roomId}`
-      }, (payload) => {
-        console.log('🔔 Raw room payload received:', payload);
-        callback(payload);
-      })
-      .subscribe((status) => {
-        console.log('🔔 Room subscription status:', status);
-      });
-    
-    return channel;
+    return new Promise((resolve) => {
+      const channel = this.supabase
+        .channel(`room_${roomId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${roomId}`
+        }, (payload) => {
+          console.log('🔔 Raw room payload received:', payload);
+          callback(payload);
+        })
+        .subscribe((status) => {
+          console.log('🔔 Room subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            resolve(channel);
+          }
+        });
+    });
   }
 
-  subscribeToCookies(roomId: string, callback: (payload: any) => void): RealtimeChannel {
+  subscribeToCookies(roomId: string, callback: (payload: any) => void): Promise<RealtimeChannel> {
     console.log('🔔 Setting up cookies subscription for:', roomId);
-    const channel = this.supabase
-      .channel(`cookies_${roomId}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public',
-        table: 'cookies',
-        filter: `room_id=eq.${roomId}`
-      }, (payload) => {
-        console.log('🔔 Raw cookie payload received:', payload);
-        callback(payload);
-      })
-      .subscribe((status) => {
-        console.log('🔔 Cookies subscription status:', status);
-      });
-    
-    return channel;
+    return new Promise((resolve) => {
+      const channel = this.supabase
+        .channel(`cookies_${roomId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'cookies',
+          filter: `room_id=eq.${roomId}`
+        }, (payload) => {
+          console.log('🔔 Raw cookie payload received:', payload);
+          callback(payload);
+        })
+        .subscribe((status) => {
+          console.log('🔔 Cookies subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            resolve(channel);
+          }
+        });
+    });
   }
 
-  subscribeToScores(roomId: string, callback: (payload: any) => void): RealtimeChannel {
-    return this.supabase
-      .channel(`scores_${roomId}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public',
-        table: 'scores',
-        filter: `room_id=eq.${roomId}`
-      }, callback)
-      .subscribe();
+  subscribeToScores(roomId: string, callback: (payload: any) => void): Promise<RealtimeChannel> {
+    console.log('🔔 Setting up scores subscription for:', roomId);
+    return new Promise((resolve) => {
+      const channel = this.supabase
+        .channel(`scores_${roomId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'scores',
+          filter: `room_id=eq.${roomId}`
+        }, callback)
+        .subscribe((status) => {
+          console.log('🔔 Scores subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            resolve(channel);
+          }
+        });
+    });
   }
 
   subscribeToPresence(roomId: string, callbacks: {

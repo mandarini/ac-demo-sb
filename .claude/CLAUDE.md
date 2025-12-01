@@ -1,4 +1,79 @@
-You are an expert in TypeScript, Angular, and scalable web application development. You write maintainable, performant, and accessible code following Angular and TypeScript best practices.
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Cookie Catcher is a real-time multiplayer cookie-catching game built with Angular 20 and Supabase for conference demos. Players join on mobile devices to catch falling cookies/cats with live leaderboards.
+
+## Common Commands
+
+```bash
+# Development
+npm start              # Start dev server (localhost:4200)
+ng serve               # Same as above
+npm run build          # Production build
+
+# Testing
+npm test               # Run Karma tests
+ng test                # Same as above
+ng test --include='**/game.store.spec.ts'  # Run single test file
+
+# Supabase
+supabase db push                           # Deploy database migrations
+supabase functions deploy                  # Deploy all Edge Functions
+supabase functions deploy claim_cookie     # Deploy single function
+supabase functions serve                   # Local function development
+```
+
+## Architecture
+
+### Frontend (Angular)
+
+```
+src/app/
+├── core/           # Singleton services
+│   ├── supabase.service.ts   # Supabase client, Edge Function calls, realtime subscriptions
+│   ├── device.service.ts     # Persistent device ID (localStorage + cookie)
+│   ├── presence.service.ts   # Real-time presence tracking
+│   └── cursor.service.ts     # Multiplayer cursor synchronization
+├── state/
+│   └── game.store.ts         # Central state with signals, realtime subscriptions, game logic
+├── pages/          # Route components (lazy-loaded)
+│   ├── join/       # Landing page, nickname assignment
+│   ├── game/       # Main gameplay
+│   ├── admin/      # Admin controls (auth-protected)
+│   └── leaderboard/
+├── ui/             # Shared presentational components
+└── types/
+    └── database.types.ts     # Supabase-generated types
+```
+
+**State Flow**: `SupabaseService` handles all Supabase communication. `GameStore` manages game state using Angular signals and subscribes to realtime channels. Components inject `GameStore` and use computed signals for reactive UI.
+
+### Backend (Supabase Edge Functions)
+
+```
+supabase/functions/
+├── assign_nickname/   # POST: deviceId → creates player with random nickname
+├── claim_cookie/      # POST: cookieId, deviceId → atomic claim with rate limiting (120ms)
+├── spawn_cookies/     # POST: spawns cookies based on room config
+├── admin_actions/     # POST: action, password → game control (start/stop/reset)
+└── admin-auth/        # POST: password → validates admin access
+```
+
+All functions use `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS. Client writes go through functions; direct DB writes are blocked.
+
+### Database Schema
+
+Five tables with RLS enabled (read-only for clients):
+- `rooms`: Single room ('main-room') with status (idle/running), spawn_rate, ttl_seconds
+- `players`: nick, device_id, color; unique constraint on (room_id, device_id)
+- `cookies`: type (cookie/cat), value (1/3), x_pct position, despawn_at, owner
+- `scores`: score_total, score_round, last_claim_at (for rate limiting)
+- `nickname_words`: Word pool for generating combinatorial nicknames
+
+Realtime enabled on rooms, players, cookies, scores tables.
 
 ## TypeScript Best Practices
 
