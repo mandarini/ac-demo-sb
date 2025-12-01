@@ -163,6 +163,24 @@ The admin panel uses **GitHub OAuth** with an email allowlist for access control
 
 ## 🛠️ Development
 
+### Generating TypeScript Types
+
+Always regenerate Supabase types after modifying the database schema:
+
+```bash
+npx supabase gen types typescript --linked > src/app/types/database.types.ts
+```
+
+This ensures type-safe database queries and RPC calls. The generated types include:
+- Table row types for `select`, `insert`, and `update` operations
+- RPC function signatures with proper argument and return types
+- Relationship definitions for joins
+
+**When to regenerate:**
+- After running `supabase db push` with new migrations
+- After adding/modifying database functions
+- After changing table schemas
+
 ### Project Structure
 ```
 src/app/
