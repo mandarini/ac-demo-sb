@@ -114,7 +114,7 @@ export class GameStore {
       // 3. Spawn time has passed (for pre-scheduled cookies)
       const notClaimed = !cookie.owner;
       const notExpired = new Date(cookie.despawn_at).getTime() > now;
-      const hasSpawned = new Date(cookie.spawned_at).getTime() <= now;
+      const hasSpawned = cookie.spawned_at ? new Date(cookie.spawned_at).getTime() <= now : true;
       return notClaimed && notExpired && hasSpawned;
     });
     return active;
