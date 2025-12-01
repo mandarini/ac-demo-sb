@@ -98,17 +98,24 @@ export class GameStore {
     return sortedScores.findIndex(s => s.player_id === myScore.player_id) + 1;
   });
 
-  // Active cookies (not claimed and not expired)
+  // Active cookies (not claimed, not expired, game is running, and spawn time has passed)
   activeCookies = computed(() => {
+    // Don't show any cookies if game is not running
+    if (!this.isGameActive()) {
+      return [];
+    }
+
     const now = new Date().getTime();
     const allCookies = this.cookies();
     const active = allCookies.filter(cookie => {
       // Cookie is active if:
       // 1. Not claimed (no owner)
       // 2. Not expired (despawn time is in the future)
+      // 3. Spawn time has passed (for pre-scheduled cookies)
       const notClaimed = !cookie.owner;
       const notExpired = new Date(cookie.despawn_at).getTime() > now;
-      return notClaimed && notExpired;
+      const hasSpawned = new Date(cookie.spawned_at).getTime() <= now;
+      return notClaimed && notExpired && hasSpawned;
     });
     return active;
   });
