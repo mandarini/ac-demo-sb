@@ -2,22 +2,24 @@
 
 A real-time multiplayer cookie-catching game built with Angular and Supabase for the Angular Connect conference. Players join on their mobile devices to catch falling cookies and cats that rain down from the sky, competing for the highest score on shared leaderboards.
 
+**Live Demo**: https://ngdemo-sb.netlify.app
+
 ## 🎮 Game Overview
 
 - **Real-time Multiplayer**: Unlimited concurrent players in a single shared room
 - **Simple Gameplay**: Tap falling emojis to claim them before they disappear
 - **Two Collectibles**: Cookies (🍪) worth 1 point, Cats (🐱) worth 3 points (15% spawn rate)
 - **Dual Leaderboards**: "This Round" and "All-time" scoring with live updates
-- **Anonymous Play**: Auto-assigned nicknames from a curated pool of 100+ fun names
+- **Anonymous Play**: Auto-assigned nicknames from 27,000+ combinatorial possibilities
 - **Real-time Cursors**: See other players' mouse movements and interactions
-- **Admin Controls**: Game master panel for starting/stopping rounds and managing gameplay
+- **Admin Controls**: Game master panel with GitHub OAuth authentication
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase project
+- Supabase project with GitHub OAuth configured
 - Angular CLI (`npm install -g @angular/cli`)
 
 ### Development Setup
@@ -30,21 +32,23 @@ A real-time multiplayer cookie-catching game built with Angular and Supabase for
    ```
 
 2. **Configure Supabase**:
-   - Update `src/environments/environment.ts` with your Supabase URL and anon key
-   - Deploy the database schema: `supabase db push`
-   - Deploy Edge Functions: `supabase functions deploy`
+   ```bash
+   # Update src/environments/environment.ts with your Supabase URL and anon key
+   supabase db push      # Deploy database schema & pg_cron jobs
+   supabase functions deploy  # Deploy Edge Functions
+   ```
 
-3. **Run locally**:
+3. **Configure GitHub OAuth** (see [Admin Authentication](#-admin-authentication) section)
+
+4. **Run locally**:
    ```bash
    ng serve
    ```
 
-4. **Access the app**:
+5. **Access the app**:
    - Game: `http://localhost:4200`
-   - Admin: `http://localhost:4200/admin`
+   - Admin: `http://localhost:4200/admin` (requires GitHub login)
    - Leaderboard: `http://localhost:4200/leaderboard`
-
-5. **Live Demo**: https://ngdemo-sb.netlify.app
 
 ## 📱 How It Works
 
@@ -55,10 +59,10 @@ A real-time multiplayer cookie-catching game built with Angular and Supabase for
 4. **Persist**: Your nickname and scores persist across browser sessions via device ID
 
 ### Privacy & Device ID
-The game generates a random identifier (like `device_abc123`) stored in both your browser's localStorage and as a cookie to remember your nickname and scores between sessions. No personal information, device details, or tracking data is collected - it's just a game identifier that lets you keep the same nickname if you refresh the page or come back later. The cookie has a 1-year expiration for persistence across browser sessions.
+The game generates a random identifier stored in localStorage and as a cookie to remember your nickname and scores between sessions. No personal information is collected - just a game identifier for session persistence.
 
 ### Game Mechanics
-- **Spawning**: Cookies spawn automatically at configurable rates (default: 2/second)
+- **Spawning**: Server-side spawning via `pg_cron` (prevents client abuse)
 - **Falling Animation**: 8-second fall time from top to bottom of screen
 - **First-tap Wins**: Atomic claiming prevents duplicate scores
 - **Rate Limiting**: 120ms cooldown between claims per player
@@ -66,7 +70,7 @@ The game generates a random identifier (like `device_abc123`) stored in both you
 
 ## 🏗️ Technical Architecture
 
-### Frontend (Angular)
+### Frontend (Angular 20)
 - **Standalone Components**: Modern Angular architecture with signals
 - **Real-time State**: `GameStore` with Supabase Realtime subscriptions
 - **Smooth Animation**: 60fps cookie falling with position interpolation
@@ -75,104 +79,87 @@ The game generates a random identifier (like `device_abc123`) stored in both you
 
 ### Backend (Supabase)
 - **PostgreSQL**: Game state, players, scores, and configuration
-- **Edge Functions (Deno)**: Secure server-side operations
-  - `assign_nickname`: Device-based nickname reservation (rate limited)
-  - `claim_cookie`: Atomic cookie claiming with rate limiting
-  - `admin_actions`: Game control operations (password protected)
-  - `admin-auth`: Admin authentication
-- **pg_cron**: Server-side cookie spawning (prevents client abuse)
+- **Edge Functions (Deno)**:
+  - `assign_nickname`: Device-based nickname reservation (IP rate limited)
+  - `claim_cookie`: Atomic cookie claiming with 120ms rate limiting
+  - `admin_actions`: Game control operations (JWT authenticated)
+- **pg_cron**: Server-side cookie spawning every minute with staggered timing
 - **Realtime**: Live updates for cookies, scores, and presence
 - **RLS Policies**: Public read access, function-only writes
+
+### Security Features
+- **Server-side Spawning**: Cookies spawned by `pg_cron`, not clients (prevents flooding)
+- **Rate Limiting**: IP-based rate limiting on player creation (10/minute)
+- **Room Capacity**: Maximum 1000 players per room
+- **JWT Authentication**: Admin actions require valid Supabase Auth token
+- **Email Allowlist**: Only allowlisted GitHub emails can access admin panel
 
 ### Database Schema
 
 ```sql
 -- Game room configuration
 rooms (
-  id: 'main-room',
-  status: 'idle' | 'running' | 'intermission',
-  spawn_rate_per_sec: 2.0,
-  ttl_seconds: 8,
-  max_players: 1000
+  id, status, spawn_rate_per_sec, ttl_seconds, max_players
 )
 
 -- Word components for combinatorial nicknames (27,000 combinations)
 nickname_words (
-  word: text,
-  position: 1 | 2 | 3
+  word, position  -- 3 positions = word1 + word2 + word3
 )
 
 -- Active players
 players (
-  nick: assigned nickname,
-  device_id: persistent browser UUID,
-  color: auto-generated hex color
+  nick, device_id, color, room_id
 )
 
 -- Falling objects
 cookies (
-  type: 'cookie' | 'cat',
-  value: 1 | 3,
-  x_pct: horizontal position (0-100),
-  spawned_at: timestamp,
-  despawn_at: timestamp,
-  owner: null until claimed
+  type, value, x_pct, spawned_at, despawn_at, owner
 )
 
 -- Player scores
 scores (
-  score_total: cumulative all-time score,
-  score_round: current round score,
-  last_claim_at: for rate limiting
+  score_total, score_round, last_claim_at
 )
 
 -- Rate limiting (prevents abuse)
 rate_limits (
-  ip_address: client IP,
-  action: function name,
-  request_count: requests in window,
-  window_start: timestamp
+  ip_address, action, request_count, window_start
+)
+
+-- Admin access control
+admin_allowlist (
+  email  -- GitHub emails allowed to access admin panel
 )
 ```
 
-## 🔐 Admin Panel
+## 🔐 Admin Authentication
 
-Access `/admin` with admin passcode authentication.
+The admin panel uses **GitHub OAuth** with an email allowlist for access control.
 
-### Game Controls
-- **Start Game**: Begin cookie spawning and scoring
-- **Stop Game**: End current session, clear active cookies
+### Setup GitHub OAuth
+
+1. **Create GitHub OAuth App**:
+   - Go to https://github.com/settings/developers
+   - Click "New OAuth App"
+   - Set Homepage URL: `https://your-app.netlify.app`
+   - Set Callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
+
+2. **Configure Supabase**:
+   - Go to Supabase Dashboard → Authentication → Providers → GitHub
+   - Enable GitHub provider
+   - Add Client ID and Client Secret from GitHub
+
+3. **Add Admin Emails**:
+   - Edit `supabase/migrations/20250912000005_github_auth.sql`
+   - Or add emails directly in Supabase Dashboard → Table Editor → `admin_allowlist`
+
+### Admin Features
+- **Game Controls**: Start/Stop game, clear cookies
 - **Spawn Rate**: Adjust cookies per second (0.5-10)
 - **Manual Spawn**: Instantly create 100 cookies for testing
-
-### Score Management
-- **Reset Round Scores**: Clear current round, keep all-time totals
-- **Reset All Scores**: Complete score wipe (with confirmation)
-
-### Real-time Status
-- **Game State**: Current status (idle/running/intermission)
-- **Player Count**: Live online player counter
-- **Admin Cursors**: See other admins' mouse movements
-
-## 🎯 Key Features
-
-### Real-time Synchronization
-- **Sub-second Updates**: Cookie spawns and claims propagate instantly
-- **Optimistic UI**: Immediate local updates with server reconciliation
-- **Presence Tracking**: Live online player count
-- **Cursor Sharing**: See other players' mouse movements
-
-### Performance Optimizations
-- **Efficient Queries**: Indexed database queries for fast leaderboards
-- **Smart Cleanup**: Automatic removal of expired cookies
-- **Rate Limiting**: Prevents spam and ensures fair play
-- **Change Detection**: OnPush strategy with signals for optimal rendering
-
-### Mobile-First Design
-- **Touch Optimized**: Large tap targets for mobile gameplay
-- **Responsive Layout**: Adapts to all screen sizes
-- **Fast Animations**: Hardware-accelerated CSS transforms
-- **Low Latency**: Direct WebSocket connections to Supabase
+- **Score Management**: Reset round scores or all scores
+- **Real-time Status**: See game state, player count, other admin cursors
 
 ## 🛠️ Development
 
@@ -180,83 +167,93 @@ Access `/admin` with admin passcode authentication.
 ```
 src/app/
 ├── core/                    # Services
-│   ├── supabase.service.ts       # Database client & Edge Functions
-│   ├── device.service.ts         # Persistent device ID generation
-│   ├── presence.service.ts       # Real-time presence tracking
-│   ├── cursor.service.ts         # Multiplayer cursor tracking
-│   └── join-notification.service.ts  # Player join notifications
+│   ├── supabase.service.ts       # Auth, database & Edge Functions
+│   ├── device.service.ts         # Persistent device ID
+│   ├── presence.service.ts       # Real-time presence
+│   ├── cursor.service.ts         # Multiplayer cursors
+│   └── auth.guard.ts             # Admin route protection
 ├── state/
 │   └── game.store.ts        # Central game state with signals
 ├── pages/
-│   ├── join/               # Landing page with nickname assignment
-│   ├── game/               # Main gameplay screen
-│   ├── admin/              # Admin control panel
-│   └── leaderboard/        # Standalone leaderboard view
+│   ├── join/               # Landing page
+│   ├── game/               # Main gameplay
+│   ├── admin/              # Admin panel (GitHub OAuth)
+│   └── leaderboard/        # Standalone leaderboard
 └── ui/                     # Reusable components
-    ├── cookie.component.ts
-    ├── cursor.component.ts
-    ├── footer.component.ts
-    ├── join-notification.component.ts
-    ├── join-notifications-container.component.ts
-    ├── realtime-cursors.component.ts
-    └── touch-ripple.component.ts
 
 supabase/
-├── migrations/             # Database schema evolution
-│   ├── *_schema.sql       # Table definitions, indexes, RLS policies
-│   ├── *_pg_cron_spawner.sql  # Server-side cookie spawning
-│   └── *_rate_limits.sql  # Rate limiting for abuse prevention
-└── functions/             # Edge Functions (Deno)
-    ├── assign_nickname/   # Player registration (rate limited)
-    ├── claim_cookie/      # Score atomic updates
-    ├── admin_actions/     # Game control (password protected)
-    └── admin-auth/        # Admin authentication
+├── migrations/
+│   ├── 20250912000001_base_schema.sql        # Core tables & RLS
+│   ├── 20250912000002_seed_nicknames.sql     # Nickname word pool
+│   ├── 20250912000003_server_side_spawning.sql  # pg_cron spawner
+│   ├── 20250912000004_rate_limiting.sql      # Abuse prevention
+│   └── 20250912000005_github_auth.sql        # Admin allowlist
+└── functions/
+    ├── assign_nickname/    # Player registration
+    ├── claim_cookie/       # Score updates
+    └── admin_actions/      # Game control (JWT auth)
 ```
 
 ### Local Development
 1. **Multiple Players**: Open multiple browser tabs or incognito windows
-2. **Admin Testing**: Use `/admin` to control game flow
+2. **Admin Testing**: Use `/admin` with your GitHub account
 3. **Real-time Debug**: Check browser DevTools for WebSocket messages
 4. **Database Inspection**: Use Supabase dashboard to view live data
 
 ## 🚀 Deployment
 
 ### Supabase Setup
-1. **Create Project**: New Supabase project (any region)
-2. **Run Migrations**: `supabase db push` to create schema
-3. **Deploy Functions**: `supabase functions deploy --no-verify-jwt`
-4. **Set Admin Password**: Configure `ADMIN_PASSCODE` in Edge Function secrets
+```bash
+# 1. Link to your project
+supabase link --project-ref <your-project-ref>
 
-### Frontend Deployment
-1. **Build**: `ng build` generates optimized static files
-2. **Deploy**: Upload `dist/ac-demo-sb/browser/` to any static host
-3. **Configure**: Ensure `_redirects` file handles Angular routing
+# 2. Deploy database (includes pg_cron jobs)
+supabase db push
 
-### Recommended Hosts
-- **Netlify**: Automatic Angular routing support
-- **Vercel**: Zero-config deployment
-- **GitHub Pages**: Free hosting with custom domains
+# 3. Deploy Edge Functions
+supabase functions deploy assign_nickname
+supabase functions deploy claim_cookie
+supabase functions deploy admin_actions
+```
+
+### Frontend Deployment (Netlify)
+```bash
+ng build
+# Deploy dist/ac-demo-sb/browser/ to Netlify
+```
+
+Add `_redirects` file for Angular routing:
+```
+/*    /index.html   200
+```
+
+### Environment Checklist
+- [ ] Supabase URL and anon key in `environment.ts`
+- [ ] GitHub OAuth configured in Supabase Dashboard
+- [ ] Your email added to `admin_allowlist` table
+- [ ] Edge Functions deployed
+- [ ] `pg_cron` extension enabled (automatic on Supabase)
 
 ## 🎨 Customization
 
 ### Game Tuning
 - **Spawn Rate**: Modify `rooms.spawn_rate_per_sec` (default: 2.0)
 - **Fall Speed**: Adjust `rooms.ttl_seconds` (default: 8)
-- **Cat Rarity**: Change probability in `spawn_cookies` function (default: 15%)
+- **Cat Rarity**: Change probability in `server_side_spawning.sql` (default: 15%)
 - **Rate Limit**: Modify claim cooldown in `claim_cookie` (default: 120ms)
+- **Room Capacity**: Adjust `rooms.max_players` (default: 1000)
 
-### Visual Customization
-- **Emojis**: Update cookie types in spawn functions
-- **Colors**: Modify player color palette in `assign_nickname`
-- **Nicknames**: Add more words to `nickname_words` table
-- **Styling**: Customize Tailwind classes throughout components
+### Adding Admin Users
+```sql
+INSERT INTO admin_allowlist (email) VALUES ('new-admin@example.com');
+```
 
 ## 📊 Conference Demo Tips
 
 ### Pre-Event Setup
-1. **Load Test**: Verify performance with expected player count
-2. **Admin Training**: Brief operators on game controls
-3. **Backup Plan**: Have admin passcode and reset procedures ready
+1. **Test OAuth**: Verify GitHub login works with your email
+2. **Add Co-admins**: Add other organizers to `admin_allowlist`
+3. **Load Test**: Verify performance with expected player count
 4. **Network**: Ensure stable internet for real-time features
 
 ### During Event
@@ -266,10 +263,10 @@ supabase/
 4. **Reset Between Sessions**: Clear scores between different groups
 
 ### Troubleshooting
-- **Slow Performance**: Reduce spawn rate or clear active cookies
-- **Players Can't Join**: Check Supabase connection and nickname pool
+- **Cookies Not Spawning**: Check `pg_cron` job in Supabase Dashboard → Database → Extensions
+- **Can't Access Admin**: Verify your GitHub email is in `admin_allowlist`
+- **Players Can't Join**: Check rate limiting in `rate_limits` table
 - **Scores Not Updating**: Verify Edge Functions are deployed
-- **Admin Issues**: Confirm admin passcode and authentication
 
 ## 📝 License
 
@@ -277,13 +274,14 @@ MIT License - Feel free to use for your own conferences and events!
 
 ## 🔗 Links
 
+- **Live Demo**: [ngdemo-sb.netlify.app](https://ngdemo-sb.netlify.app)
 - **Creator**: [Katerina Skroumpelou](https://github.com/mandarini)
 - **Twitter**: [@psybercity](https://x.com/psybercity)
 - **Website**: [psyber.city](https://psyber.city)
 - **Source Code**: [GitHub Repository](https://github.com/mandarini/ac-demo-sb)
-- **Supabase Docs**: [supabase.com](https://supabase.com/)
+- **Supabase Docs**: [supabase.com/docs](https://supabase.com/docs)
 
 ---
 
-**Built with ❤️ for Angular Connect 2025**  
+**Built with ❤️ for Angular Connect 2025**
 *Showcasing the power of Angular + Supabase for real-time multiplayer experiences*

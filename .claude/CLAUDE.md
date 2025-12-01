@@ -33,16 +33,17 @@ supabase functions serve                   # Local function development
 ```
 src/app/
 ├── core/           # Singleton services
-│   ├── supabase.service.ts   # Supabase client, Edge Function calls, realtime subscriptions
+│   ├── supabase.service.ts   # Supabase client, auth, Edge Functions, realtime
 │   ├── device.service.ts     # Persistent device ID (localStorage + cookie)
 │   ├── presence.service.ts   # Real-time presence tracking
-│   └── cursor.service.ts     # Multiplayer cursor synchronization
+│   ├── cursor.service.ts     # Multiplayer cursor synchronization
+│   └── auth.guard.ts         # Admin route protection (GitHub OAuth)
 ├── state/
 │   └── game.store.ts         # Central state with signals, realtime subscriptions, game logic
 ├── pages/          # Route components (lazy-loaded)
 │   ├── join/       # Landing page, nickname assignment
 │   ├── game/       # Main gameplay
-│   ├── admin/      # Admin controls (auth-protected)
+│   ├── admin/      # Admin controls (GitHub OAuth protected)
 │   └── leaderboard/
 ├── ui/             # Shared presentational components
 └── types/
@@ -55,25 +56,27 @@ src/app/
 
 ```
 supabase/functions/
-├── assign_nickname/   # POST: deviceId → creates player with random nickname (rate limited)
+├── assign_nickname/   # POST: deviceId → creates player with random nickname (IP rate limited)
 ├── claim_cookie/      # POST: cookieId, deviceId → atomic claim with rate limiting (120ms)
-├── admin_actions/     # POST: action, password → game control (start/stop/reset)
-└── admin-auth/        # POST: password → validates admin access
+└── admin_actions/     # POST: action + JWT → game control (requires GitHub OAuth)
 ```
 
 All functions use `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS. Client writes go through functions; direct DB writes are blocked.
 
 **Cookie Spawning**: Handled server-side by `pg_cron` (runs every minute, spawns staggered cookies). This prevents client-side abuse.
 
+**Admin Auth**: Uses GitHub OAuth via Supabase Auth. JWT token passed in Authorization header, user email checked against `admin_allowlist` table.
+
 ### Database Schema
 
-Six tables with RLS enabled (read-only for clients):
+Seven tables with RLS enabled (read-only for clients):
 - `rooms`: Single room ('main-room') with status (idle/running), spawn_rate, ttl_seconds, max_players
 - `players`: nick, device_id, color; unique constraint on (room_id, device_id)
 - `cookies`: type (cookie/cat), value (1/3), x_pct position, despawn_at, owner
 - `scores`: score_total, score_round, last_claim_at (for rate limiting)
 - `nickname_words`: Word pool for generating combinatorial nicknames
 - `rate_limits`: IP-based rate limiting for abuse prevention
+- `admin_allowlist`: Email addresses allowed to access admin panel
 
 Realtime enabled on rooms, players, cookies, scores tables.
 

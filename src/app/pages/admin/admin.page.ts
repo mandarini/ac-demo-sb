@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,51 +11,70 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
   template: `
     <div class="min-h-screen p-4">
       <!-- Realtime Cursors for Admin Collaboration -->
-      @if (authenticated()) {
-        <app-realtime-cursors 
+      @if (isAdmin()) {
+        <app-realtime-cursors
           roomName="admin-room"
-          username="Admin"
+          [username]="userName()"
           userColor="#EF4444"
-          userId="admin"
+          [userId]="userId()"
         />
       }
-      
+
       <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-white">Admin Panel</h1>
-          @if (authenticated()) {
-            <button
-              (click)="logout()"
-              class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-            >
-              🚪 Logout
-            </button>
+          @if (isAuthenticated()) {
+            <div class="flex items-center gap-4">
+              @if (userAvatar()) {
+                <img
+                  [src]="userAvatar()"
+                  alt="Profile"
+                  class="w-8 h-8 rounded-full"
+                />
+              }
+              <span class="text-white/80">{{ userName() }}</span>
+              <button
+                (click)="logout()"
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Sign Out
+              </button>
+            </div>
           }
         </div>
 
-        @if (!authenticated()) {
-          <!-- Passcode Form -->
-          <div class="bg-white/10 backdrop-blur rounded-lg p-6">
-            <h2 class="text-xl font-bold text-white mb-4">Enter Admin Passcode</h2>
-            <div class="flex gap-2">
-              <input
-                type="password"
-                [(ngModel)]="passcode"
-                (keyup.enter)="authenticate()"
-                class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400"
-                placeholder="Enter passcode..."
-              />
-              <button
-                (click)="authenticate()"
-                class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                [disabled]="loading()"
-              >
-                {{ loading() ? 'Authenticating...' : 'Login' }}
-              </button>
-            </div>
+        @if (!isAuthenticated()) {
+          <!-- GitHub Login -->
+          <div class="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
+            <h2 class="text-xl font-bold text-white mb-4">Admin Access Required</h2>
+            <p class="text-white/60 mb-6">Sign in with GitHub to access admin controls.</p>
+            <button
+              (click)="signInWithGitHub()"
+              class="px-8 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 flex items-center gap-3 mx-auto"
+              [disabled]="loading()"
+            >
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              {{ loading() ? 'Signing in...' : 'Sign in with GitHub' }}
+            </button>
             @if (error()) {
-              <p class="text-red-400 mt-2">{{ error() }}</p>
+              <p class="text-red-400 mt-4">{{ error() }}</p>
             }
+          </div>
+        } @else if (!isAdmin()) {
+          <!-- Not Authorized -->
+          <div class="bg-white/10 backdrop-blur rounded-lg p-8 text-center">
+            <h2 class="text-xl font-bold text-red-400 mb-4">Access Denied</h2>
+            <p class="text-white/60 mb-4">
+              Your account ({{ userEmail() }}) is not authorized for admin access.
+            </p>
+            <button
+              (click)="logout()"
+              class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              Sign Out
+            </button>
           </div>
         } @else {
           <!-- Admin Controls -->
@@ -69,14 +88,14 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
                   class="px-8 py-4 bg-green-500 text-white text-lg font-bold rounded-lg hover:bg-green-600 min-w-[150px]"
                   [disabled]="loading()"
                 >
-                  🎮 START GAME
+                  START GAME
                 </button>
                 <button
                   (click)="adminAction('stop_round')"
                   class="px-8 py-4 bg-red-500 text-white text-lg font-bold rounded-lg hover:bg-red-600 min-w-[150px]"
                   [disabled]="loading()"
                 >
-                  🛑 STOP GAME
+                  STOP GAME
                 </button>
               </div>
               <div class="flex gap-4 justify-center mt-4">
@@ -166,12 +185,19 @@ import { RealtimeCursorsComponent } from '../../ui/realtime-cursors.component';
   styles: []
 })
 export class AdminPage implements OnInit {
-  authenticated = signal(false);
-  passcode = '';
   error = signal<string | null>(null);
   loading = signal(false);
   status = signal<string | null>(null);
   spawnRate = 2;
+
+  // Computed signals from SupabaseService
+  isAuthenticated = computed(() => !!this.supabase.session());
+  isAdmin = computed(() => this.supabase.isAdmin());
+  user = computed(() => this.supabase.user());
+  userName = computed(() => this.user()?.user_metadata?.['full_name'] || this.user()?.email || 'Admin');
+  userEmail = computed(() => this.user()?.email || '');
+  userAvatar = computed(() => this.user()?.user_metadata?.['avatar_url'] || null);
+  userId = computed(() => this.user()?.id || 'admin');
 
   constructor(
     private supabase: SupabaseService,
@@ -179,45 +205,27 @@ export class AdminPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Check if already authenticated in session
-    const isAuth = sessionStorage.getItem('admin_authenticated');
-    if (isAuth === 'true') {
-      this.authenticated.set(true);
-    }
+    // Auth state is managed by SupabaseService signals
   }
 
-  async authenticate() {
-    if (!this.passcode.trim()) {
-      this.error.set('Please enter a password');
-      return;
-    }
-
+  async signInWithGitHub() {
     this.loading.set(true);
     this.error.set(null);
 
     try {
-      const result = await this.supabase.authenticateAdmin(this.passcode);
-      
-      if (result.authenticated) {
-        this.authenticated.set(true);
-        sessionStorage.setItem('admin_authenticated', 'true');
-        this.error.set(null);
-      } else {
-        this.error.set(result.error || 'Authentication failed');
-      }
+      await this.supabase.signInWithGitHub();
+      // Redirect happens automatically via OAuth flow
     } catch (err) {
-      console.error('Authentication error:', err);
-      this.error.set('Authentication failed. Please try again.');
-    } finally {
+      console.error('GitHub sign in error:', err);
+      this.error.set('Failed to sign in with GitHub. Please try again.');
       this.loading.set(false);
-      this.passcode = '';
     }
   }
 
   async adminAction(action: string, params: any = {}) {
     this.loading.set(true);
     this.status.set(null);
-    
+
     try {
       const result = await this.supabase.adminAction(action, params);
       this.status.set(JSON.stringify(result, null, 2));
@@ -243,11 +251,14 @@ export class AdminPage implements OnInit {
     this.router.navigate(['/game']);
   }
 
-  logout() {
-    this.authenticated.set(false);
-    sessionStorage.removeItem('admin_authenticated');
-    this.supabase.clearAdminSession();
-    this.status.set(null);
-    this.error.set(null);
+  async logout() {
+    try {
+      await this.supabase.signOut();
+      this.status.set(null);
+      this.error.set(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+      this.error.set('Failed to sign out');
+    }
   }
 }

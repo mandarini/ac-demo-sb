@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { Injectable, signal } from '@angular/core';
+import { createClient, SupabaseClient, RealtimeChannel, Session, User } from '@supabase/supabase-js';
 import { Database } from '../types/database.types';
 import { environment } from '../../environments/environment';
 
@@ -8,13 +8,80 @@ import { environment } from '../../environments/environment';
 })
 export class SupabaseService {
   private supabase: SupabaseClient<Database>;
-  private adminPassword: string | null = null;
+
+  // Auth state signals
+  session = signal<Session | null>(null);
+  user = signal<User | null>(null);
+  isAdmin = signal<boolean>(false);
 
   constructor() {
     this.supabase = createClient<Database>(
       environment.supabaseUrl,
       environment.supabaseKey
     );
+
+    // Initialize auth state
+    this.initializeAuth();
+  }
+
+  private async initializeAuth() {
+    // Get initial session
+    const { data: { session } } = await this.supabase.auth.getSession();
+    this.session.set(session);
+    this.user.set(session?.user ?? null);
+
+    if (session?.user?.email) {
+      await this.checkAdminStatus(session.user.email);
+    }
+
+    // Listen for auth changes
+    this.supabase.auth.onAuthStateChange(async (event, session) => {
+      this.session.set(session);
+      this.user.set(session?.user ?? null);
+
+      if (session?.user?.email) {
+        await this.checkAdminStatus(session.user.email);
+      } else {
+        this.isAdmin.set(false);
+      }
+    });
+  }
+
+  private async checkAdminStatus(email: string) {
+    const { data, error } = await this.supabase
+      .rpc('is_admin', { user_email: email });
+
+    if (!error && data) {
+      this.isAdmin.set(true);
+    } else {
+      this.isAdmin.set(false);
+    }
+  }
+
+  // GitHub OAuth sign in
+  async signInWithGitHub() {
+    const { data, error } = await this.supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/admin`
+      }
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  // Sign out
+  async signOut() {
+    const { error } = await this.supabase.auth.signOut();
+    if (error) throw error;
+    this.isAdmin.set(false);
+  }
+
+  // Get current session
+  async getSession() {
+    const { data: { session }, error } = await this.supabase.auth.getSession();
+    if (error) throw error;
+    return session;
   }
 
   get client(): SupabaseClient<Database> {
@@ -39,27 +106,18 @@ export class SupabaseService {
     return data;
   }
 
-  // Admin authentication
-  async authenticateAdmin(password: string): Promise<{ authenticated: boolean; error?: string }> {
-    const { data, error } = await this.supabase.functions.invoke('admin-auth', {
-      body: { password }
-    });
-    if (error) throw error;
-    if (data?.authenticated) {
-      this.adminPassword = password; // Store for subsequent calls
-    }
-    return data;
-  }
-
-  // Clear admin session
-  clearAdminSession() {
-    this.adminPassword = null;
-  }
-
-  // Admin functions
+  // Admin functions (uses JWT auth from session)
   async adminAction(action: string, params: any = {}) {
+    const session = await this.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
     const { data, error } = await this.supabase.functions.invoke('admin_actions', {
-      body: { action, password: this.adminPassword, ...params }
+      body: { action, ...params },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
     });
     if (error) throw error;
     return data;
