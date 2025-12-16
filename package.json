@@ -28,7 +28,7 @@
     "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
     "@angular/router": "^20.3.0",
-    "@supabase/supabase-js": "^2.86.0",
+    "@supabase/supabase-js": "https://pkg.pr.new/@supabase/supabase-js@1961",
     "@tailwindcss/postcss": "^4.1.13",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
